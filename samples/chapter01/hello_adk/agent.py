@@ -89,7 +89,7 @@ def get_sightseeing(city: str) -> dict:
 
 # エージェント定義
 root_agent = Agent(
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     name="weather_agent",
     instruction=(
         "ユーザーが指定した都市の天気と観光情報を教えてください。"

@@ -115,7 +115,7 @@ ENABLE_BIGQUERY_MCP=1 で再起動が必要なことを伝え、kubectlで確認
 # インフラ監視エージェントの定義
 root_agent = Agent(
     name="infra_monitor",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=_build_instruction(),
     tools=_build_tools(),
 )

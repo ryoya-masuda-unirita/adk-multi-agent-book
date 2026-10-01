@@ -42,7 +42,7 @@ def debug_before_tool(tool, args, tool_context):
 
 agent = Agent(
     name="debug_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     # instructionは紙面では "..." と省略。以下は補完した例
     instruction="ユーザーの質問に回答してください。",
     before_model_callback=debug_before_model,

@@ -16,7 +16,7 @@ mcp_toolset = McpToolset(
 # MCPツールセットをエージェントのtoolsに渡す
 agent = Agent(
     name="data_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーのデータ分析要求に応えてください。",
     tools=[mcp_toolset],
 )

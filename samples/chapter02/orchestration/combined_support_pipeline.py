@@ -42,7 +42,7 @@ history_search_tool = FunctionTool(func=search_inquiry_history)
 # === レベル1: 情報収集（並列） ===
 order_lookup = Agent(
     name="order_lookup",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     description="注文情報を検索する",
     instruction="注文IDまたは顧客情報から注文データを検索してください。",
     tools=[order_search_tool],
@@ -51,7 +51,7 @@ order_lookup = Agent(
 
 customer_history = Agent(
     name="customer_history",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     description="顧客の過去の問い合わせ履歴を取得する",
     instruction="顧客IDから過去の問い合わせ履歴を取得してください。",
     tools=[history_search_tool],
@@ -66,14 +66,14 @@ info_gathering = ParallelAgent(
 # === レベル2: 問題分析と回答生成（ループ） ===
 draft_response = Agent(
     name="draft_response",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="収集された情報に基づいて、顧客への回答ドラフトを作成してください。",
     output_key="response_draft",
 )
 
 quality_check = Agent(
     name="quality_check",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""回答ドラフトを以下の基準でレビューしてください:
 - 事実関係が正確か
 - 丁寧で共感的なトーンか

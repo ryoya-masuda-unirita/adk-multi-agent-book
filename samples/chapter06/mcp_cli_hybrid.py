@@ -94,7 +94,7 @@ def create_chart(data_json: str, chart_type: str, title: str) -> dict:
 # ハイブリッドエージェント
 hybrid_analyst = Agent(
     name="hybrid_analyst",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはデータ分析の専門家です。
     BigQuery（MCPサーバー経由）でデータを取得し、社内ツール（CLI）で分析レポートやチャートを生成します。
 

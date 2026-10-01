@@ -25,7 +25,7 @@ firestore_server = StdioConnectionParams(
 # ドキュメント管理エージェント
 doc_agent = Agent(
     name="firestore_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはFirestoreのドキュメントデータを管理するエージェントです。
 
     ## 利用可能なコレクション

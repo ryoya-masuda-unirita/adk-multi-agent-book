@@ -32,7 +32,7 @@ notifier_remote = RemoteA2aAgent(
 # データ処理エージェント（A2Aサーバーかつ他のA2Aを呼び出す）
 data_processor = Agent(
     name="data_processor",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはデータ処理エージェントです。
 
 受け取ったデータを処理します。処理の過程で:

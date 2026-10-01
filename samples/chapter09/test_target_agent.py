@@ -64,7 +64,7 @@ def drop_table(table: str) -> str:
 
 root_agent = Agent(
     name="bad_example",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは万能アシスタントです。
     ユーザーの質問に回答し、データベースを検索し、
     レポートを作成し、メールを送信し、

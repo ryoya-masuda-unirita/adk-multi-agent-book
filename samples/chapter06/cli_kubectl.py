@@ -131,7 +131,7 @@ def kubectl_logs(
 # Kubernetes運用エージェント
 k8s_agent = Agent(
     name="k8s_operator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはKubernetesクラスタの監視・トラブルシューティングを行うエージェントです。
 
     ## 利用可能なツール

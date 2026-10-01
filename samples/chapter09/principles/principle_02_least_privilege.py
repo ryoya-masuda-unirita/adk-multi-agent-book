@@ -49,7 +49,7 @@ def check_tool_permission(
 # 閲覧専用エージェント（検索のみ）
 viewer_agent = Agent(
     name="viewer_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="商品情報を検索して回答します。商品の変更はできません。",
     tools=[search_products],  # 読み取り専用ツールのみ
 )
@@ -57,7 +57,7 @@ viewer_agent = Agent(
 # 管理者エージェント（検索＋更新、コールバックで二重チェック）
 admin_agent = Agent(
     name="admin_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="商品情報の検索と価格の更新を行います。",
     tools=[search_products, update_product_price],
     before_tool_callback=check_tool_permission,

@@ -33,7 +33,7 @@ def dynamic_instruction(ctx: ReadonlyContext) -> str:
 
 agent = Agent(
     name="customer_support",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=dynamic_instruction,
 )
 
@@ -44,7 +44,7 @@ agent = Agent(
 # 実行後、state["research_result"] に出力テキストが保存される。
 researcher = Agent(
     name="researcher",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="旅行先の情報を調査してください。",
     output_key="research_result",
 )
@@ -60,7 +60,7 @@ def planner_instruction(ctx: ReadonlyContext) -> str:
 
 planner = Agent(
     name="planner",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=planner_instruction,
     output_key="schedule",
 )

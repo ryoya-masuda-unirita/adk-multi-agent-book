@@ -101,7 +101,7 @@ skill_toolset = SkillToolset(skills=[order_skill, product_skill])
 # ルートエージェントの定義
 root_agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=build_instruction,
     tools=[
         skill_toolset,

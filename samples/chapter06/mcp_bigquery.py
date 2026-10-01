@@ -25,7 +25,7 @@ bigquery_server = StdioConnectionParams(
 # データ分析エージェント
 data_analyst = Agent(
     name="data_analyst",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはBigQueryを使ったデータ分析の専門家です。
 
     ## 利用可能なツール

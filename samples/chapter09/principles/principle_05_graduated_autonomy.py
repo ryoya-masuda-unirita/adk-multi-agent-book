@@ -95,7 +95,7 @@ def graduated_autonomy_callback(
 # 自律レベルを適用したエージェント
 agent = Agent(
     name="graduated_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="商品管理と注文処理を行います。",
     tools=[search_products, update_product_price, create_order, delete_product],
     before_tool_callback=graduated_autonomy_callback,

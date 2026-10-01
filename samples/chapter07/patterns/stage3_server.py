@@ -17,7 +17,7 @@ from google.adk.a2a.utils.agent_to_a2a import to_a2a
 # レポート生成エージェント
 report_agent = Agent(
     name="report_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=(
         "あなたはレポート生成の専門エージェントです。"
         "渡された分析結果から、簡潔なレポート文書を作成してください。"

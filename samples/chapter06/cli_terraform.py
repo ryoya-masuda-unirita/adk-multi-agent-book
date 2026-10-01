@@ -88,7 +88,7 @@ def terraform_output(output_name: str = "") -> dict:
 # Terraform運用エージェント
 terraform_agent = Agent(
     name="terraform_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはTerraformで管理されたインフラの状態確認と計画策定を行うエージェントです。
 
     ## 利用可能なツール

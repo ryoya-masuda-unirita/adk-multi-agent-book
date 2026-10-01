@@ -54,7 +54,7 @@ def delete_customer_data(customer_id: str) -> dict:
 # 権限チェック付きエージェント
 auth_agent = Agent(
     name="customer_service_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="あなたは顧客管理エージェントです。ユーザーの権限に応じて操作を実行してください。",
     tools=[read_customer_data, update_customer_data, delete_customer_data],
     before_tool_callback=before_tool_guard,

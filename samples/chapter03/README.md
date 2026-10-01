@@ -37,7 +37,7 @@ cd support_agent
 cp .env.example .env
 ```
 
-APIキーだけで動きます。Google Cloudプロジェクトは不要です。
+AWSの`oic`プロファイル（Amazon Bedrock）だけで動きます。Google Cloudプロジェクトは不要です。
 
 ## 実行
 

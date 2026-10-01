@@ -28,7 +28,7 @@ cloudsql_server = StdioConnectionParams(
 # 業務データベース操作エージェント
 db_agent = Agent(
     name="db_operator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはCloud SQL上の業務データベースを操作するエージェントです。
 
     ## 権限

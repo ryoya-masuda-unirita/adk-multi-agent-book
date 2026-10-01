@@ -44,7 +44,7 @@ def get_order_info(order_id: str) -> dict:
 # アンチパターン: セキュリティの後付け
 insecure_agent = Agent(
     name="insecure_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="何でも回答します。",
     tools=[
         execute_sql,       # SQLインジェクションのリスク
@@ -94,7 +94,7 @@ api_key = os.environ.get("API_KEY")  # コードに直書きしない
 # セキュアなエージェント
 secure_agent = Agent(
     name="secure_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""カスタマーサポートを行います。
 
     ## セキュリティルール

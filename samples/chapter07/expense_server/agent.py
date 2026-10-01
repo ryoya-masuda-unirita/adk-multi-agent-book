@@ -32,7 +32,7 @@ except ImportError:
 # 経費精算エージェントの定義
 expense_agent = Agent(
     name="expense_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは経費精算の専門エージェントです。
 ユーザーの依頼に応じて、経費データの登録と照会を行います。
 

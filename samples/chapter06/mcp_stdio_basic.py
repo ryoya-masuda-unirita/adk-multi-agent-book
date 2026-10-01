@@ -22,7 +22,7 @@ filesystem_server = StdioConnectionParams(
 # McpToolsetを使ってADKエージェントのツールとして統合
 agent = Agent(
     name="file_assistant",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはファイル操作を支援するアシスタントです。
     ユーザーの指示に従い、ファイルの読み取り、一覧表示、検索を行います。
     ファイルの内容を変更する前に、必ずユーザーに確認を取ってください。""",

@@ -9,7 +9,7 @@ from google.adk import Agent
 # サブエージェント: 注文管理（ルートと同じSessionのStateを読み取れる）
 order_agent = Agent(
     name="order_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=lambda ctx: f"""注文管理を担当します。
 ユーザー名: {ctx.state.get('user_name', '不明')}
 ユーザーティア: {ctx.state.get('user_tier', 'free')}
@@ -19,7 +19,7 @@ order_agent = Agent(
 # サブエージェント: 技術サポート
 tech_agent = Agent(
     name="tech_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=lambda ctx: f"""技術サポートを担当します。
 ユーザー名: {ctx.state.get('user_name', '不明')}
 """,
@@ -28,7 +28,7 @@ tech_agent = Agent(
 # ルートエージェント
 root_agent = Agent(
     name="root_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="問い合わせ内容に対応するサブエージェントに振り分けてください。",
     sub_agents=[order_agent, tech_agent],
 )

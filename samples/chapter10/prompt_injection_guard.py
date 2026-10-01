@@ -70,7 +70,7 @@ def before_model_guard(
 # ガードレールを組み込んだエージェント
 secure_agent = Agent(
     name="secure_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="あなたはカスタマーサポートエージェントです。製品に関する質問に回答してください。",
     before_model_callback=before_model_guard,
 )

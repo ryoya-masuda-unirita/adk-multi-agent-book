@@ -25,7 +25,7 @@ skill_toolset = SkillToolset(skills=[review_skill])
 # エージェントに組み込む
 product_agent = Agent(
     name="product_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="商品に関する問い合わせに対応するエージェントです。",
     tools=[skill_toolset, analyze_reviews, get_review_trends],
 )

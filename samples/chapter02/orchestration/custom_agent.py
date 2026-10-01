@@ -62,7 +62,7 @@ class VotingAgent(BaseAgent):
 # 入力の複雑さを分類するエージェント
 classifier = Agent(
     name="classifier",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""ユーザーの入力の複雑さを判定し、simple または complex のどちらかだけを出力してください。""",
     output_key="complexity",
 )
@@ -70,14 +70,14 @@ classifier = Agent(
 # 簡易パイプライン（短いInstructionで即答）
 fast_path = Agent(
     name="fast_path",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの質問に簡潔に回答してください。",
 )
 
 # 詳細パイプライン（同じモデルで段階的に回答）
 detailed_path = Agent(
     name="detailed_path",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの質問を分解し、根拠を示しながら詳細に回答してください。",
 )
 

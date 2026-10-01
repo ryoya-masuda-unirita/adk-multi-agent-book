@@ -147,7 +147,7 @@ def kill_switch_callback(
 # フェイルセーフを統合したエージェント
 safe_agent = Agent(
     name="safe_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""ユーザーの検索リクエストに対応します。
     エラーが発生した場合は、ユーザーにわかりやすく状況を説明してください。
     同じ操作を3回以上繰り返さないでください。""",

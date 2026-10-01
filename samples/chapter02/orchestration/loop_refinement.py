@@ -9,7 +9,7 @@ from google.adk.agents import LoopAgent
 # コード生成エージェント
 code_generator = Agent(
     name="code_generator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""ユーザーの要件に基づいてPythonコードを生成してください。
 レビューフィードバックがある場合は、それを反映して修正してください。""",
     output_key="generated_code",
@@ -18,7 +18,7 @@ code_generator = Agent(
 # コードレビューエージェント
 code_reviewer = Agent(
     name="code_reviewer",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""生成されたコードをレビューしてください。
 問題がなければ「APPROVED」とだけ応答してください。
 問題がある場合は、具体的な修正点を指摘してください。""",

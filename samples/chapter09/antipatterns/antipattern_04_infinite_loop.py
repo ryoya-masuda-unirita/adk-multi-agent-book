@@ -24,7 +24,7 @@ def create_research_agent(name: str = "research_agent") -> Agent:
     """終了条件をInstructionに明記した調査エージェントを生成する"""
     return Agent(
         name=name,
-        model="gemini-3.5-flash",
+        model="bedrock/global.anthropic.claude-sonnet-5-5",
         instruction="""調査を行います。
 
     ## 終了条件
@@ -42,7 +42,7 @@ def create_analysis_agent(name: str = "analysis_agent") -> Agent:
     """調査結果を要約する分析エージェントを生成する"""
     return Agent(
         name=name,
-        model="gemini-3.5-flash",
+        model="bedrock/global.anthropic.claude-sonnet-5-5",
         instruction="調査結果を分析し、要点をまとめます。",
     )
 

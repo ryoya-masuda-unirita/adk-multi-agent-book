@@ -15,7 +15,7 @@ from .tools import analyze_ast, check_design_rules, list_files, read_source_file
 # 分析エージェント: ソースコードの読み取りとAST解析
 code_analyzer = Agent(
     name="code_analyzer",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""ソースコードを分析するエージェントです。
 
 ## 手順
@@ -33,7 +33,7 @@ AST解析結果だけをJSON形式で出力してください。
 # レビューエージェント: 設計原則への準拠チェック
 design_reviewer = Agent(
     name="design_reviewer",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""設計原則への準拠をレビューするエージェントです。
 
 ## 手順
@@ -53,7 +53,7 @@ read_source_fileやanalyze_astは前段のcode_analyzer専用のため、この�
 - 品質: 評価セットの有無
 
 自動チェックで検出できない観点も含めて、包括的にレビューしてください。
-モデル名の提案が必要な場合は、本書の標準であるgemini-3.5-flashだけを使ってください。
+モデル名の提案が必要な場合は、本書の標準であるbedrock/global.anthropic.claude-sonnet-5-5（Amazon Bedrock経由のClaude）だけを使ってください。
 gemini-1.5-flash、gemini-2.5-flash、gemini-3-flash-previewなど古いモデル名は補完しないでください。""",
     tools=[check_design_rules, list_files],
     output_key="review_result",
@@ -62,7 +62,7 @@ gemini-1.5-flash、gemini-2.5-flash、gemini-3-flash-previewなど古いモデ�
 # レポートエージェント: レビュー結果をMarkdownに整形
 report_generator = Agent(
     name="report_generator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""レビュー結果をMarkdownレポートにフォーマットするエージェントです。
 
 ## 出力フォーマット

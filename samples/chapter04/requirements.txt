@@ -1,4 +1,7 @@
 google-adk[db,gcp]==2.2.0
+# Amazon Bedrock（Claude）をLiteLLM経由で呼ぶための依存。範囲はgoogle-adk[extensions]の指定に合わせる
+litellm>=1.83.7,<=1.83.14
+boto3>=1.34.0
 google-genai>=2.4,<3
 google-cloud-aiplatform==1.153.1   # Vertex AI Memory Bank / RAG Engine用（GAの vertexai.rag を使用）
 opentelemetry-exporter-otlp-proto-http==1.41.1

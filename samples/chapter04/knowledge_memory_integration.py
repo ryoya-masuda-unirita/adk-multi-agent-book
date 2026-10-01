@@ -62,7 +62,7 @@ async def save_session_to_memory(callback_context: CallbackContext) -> None:
 # エージェントの定義: RAGツールとMemory検索ツールを装備
 agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""カスタマーサポートエージェントです。
 
     ## 情報の使い分け

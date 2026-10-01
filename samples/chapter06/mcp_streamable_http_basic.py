@@ -22,7 +22,7 @@ remote_server = StreamableHTTPConnectionParams(
 
 agent = Agent(
     name="remote_tool_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="リモートツールを活用してタスクを遂行するエージェントです。",
     tools=[
         McpToolset(

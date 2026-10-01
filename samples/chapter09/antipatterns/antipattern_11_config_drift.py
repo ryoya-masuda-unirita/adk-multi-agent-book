@@ -14,7 +14,7 @@ from google.adk import Agent
 # アンチパターン: 設定をコードに直書き
 bad_agent = Agent(
     name="agent",
-    model="gemini-3.5-flash",  # 環境によって変えたいが直書き
+    model="bedrock/global.anthropic.claude-sonnet-5-5",  # 環境によって変えたいが直書き
     instruction="...",
 )
 
@@ -22,7 +22,7 @@ bad_agent = Agent(
 @dataclass
 class AgentConfig:
     """エージェントの設定を環境変数から読み込みます"""
-    model: str = os.environ.get("AGENT_MODEL", "gemini-3.5-flash")
+    model: str = os.environ.get("AGENT_MODEL", "bedrock/global.anthropic.claude-sonnet-5-5")
     max_turns: int = int(os.environ.get("AGENT_MAX_TURNS", "10"))
     cost_limit_usd: float = float(os.environ.get("AGENT_COST_LIMIT", "1.0"))
     log_level: str = os.environ.get("AGENT_LOG_LEVEL", "INFO")

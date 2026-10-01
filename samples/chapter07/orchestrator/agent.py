@@ -33,7 +33,7 @@ approval_remote_agent = RemoteA2aAgent(
 # オーケストレーターエージェントの定義
 root_agent = Agent(
     name="orchestrator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは経費精算システムのオーケストレーターエージェントです。
 ユーザーのリクエストを適切な専門エージェントに委譲して処理します。
 

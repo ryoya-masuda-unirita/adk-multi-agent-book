@@ -9,7 +9,7 @@ from google.adk import Agent
 # 静的Instruction: 文字列リテラルで定義
 support_agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはECサイトのカスタマーサポートエージェントです。
 
 ## 役割

@@ -66,7 +66,7 @@ policy_docs = VertexAiRagRetrieval(
 # エージェントに3つのRAGツールを装備
 agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""カスタマーサポートエージェントです。
 
     ## ツールの使い分け

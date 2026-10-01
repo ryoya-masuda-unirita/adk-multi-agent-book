@@ -1,6 +1,9 @@
 # samples/chapter08/deploy/cloud_run/requirements.txt
 # Cloud Run用HTTPサーバーの依存パッケージ
 google-adk[gcp]==2.2.0
+# Amazon Bedrock（Claude）をLiteLLM経由で呼ぶための依存。範囲はgoogle-adk[extensions]の指定に合わせる
+litellm>=1.83.7,<=1.83.14
+boto3>=1.34.0
 fastapi>=0.115.0
 uvicorn>=0.30.0
 # DatabaseSessionService（PostgreSQL）用ドライバ

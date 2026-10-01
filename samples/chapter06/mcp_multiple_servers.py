@@ -44,7 +44,7 @@ bigquery_server = StreamableHTTPConnectionParams(
 # 全MCPサーバーのツールを統合したエージェント
 multi_tool_agent = Agent(
     name="multi_tool_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは以下のツールを駆使してタスクを遂行するエージェントです。
 
     利用可能なツール:

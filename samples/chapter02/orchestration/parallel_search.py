@@ -60,7 +60,7 @@ activity_search_tool = FunctionTool(func=search_activities)
 # 航空券検索エージェント
 flight_agent = Agent(
     name="flight_searcher",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="指定された区間・日程の航空券を検索してください。",
     output_key="flight_options",
     tools=[flight_search_tool],
@@ -69,7 +69,7 @@ flight_agent = Agent(
 # ホテル検索エージェント
 hotel_agent = Agent(
     name="hotel_searcher",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="指定された都市・日程のホテルを検索してください。",
     output_key="hotel_options",
     tools=[hotel_search_tool],
@@ -78,7 +78,7 @@ hotel_agent = Agent(
 # アクティビティ検索エージェント
 activity_agent = Agent(
     name="activity_searcher",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="指定された都市の観光アクティビティを検索してください。",
     output_key="activity_options",
     tools=[activity_search_tool],

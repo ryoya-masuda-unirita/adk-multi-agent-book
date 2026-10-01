@@ -27,7 +27,7 @@ def create_shared_library_agents(
     # エージェント A: カスタマーサポート
     support_agent = Agent(
         name="support_agent",
-        model="gemini-3.5-flash",
+        model="bedrock/global.anthropic.claude-sonnet-5-5",
         instruction="...",
         tools=[
             SkillToolset(skills=[auth_skill, notification_skill, order_skill]),
@@ -37,7 +37,7 @@ def create_shared_library_agents(
     # エージェント B: 社内管理ツール（共通スキルを再利用）
     admin_agent = Agent(
         name="admin_agent",
-        model="gemini-3.5-flash",
+        model="bedrock/global.anthropic.claude-sonnet-5-5",
         instruction="...",
         tools=[SkillToolset(skills=[auth_skill, notification_skill])],
     )

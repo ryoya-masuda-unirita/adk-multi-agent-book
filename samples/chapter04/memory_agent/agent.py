@@ -6,7 +6,7 @@ from google.adk.agents.callback_context import CallbackContext
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.apps.app import App, EventsCompactionConfig
 from google.adk.apps.llm_event_summarizer import LlmEventSummarizer
-from google.adk.models import Gemini
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.retrieval import VertexAiRagRetrieval
 from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 from google.adk.runners import Runner
@@ -89,7 +89,7 @@ if rag_corpus_id:
 # --- エージェントの定義 ---
 root_agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=build_instruction,
     tools=tools_list,
     after_agent_callback=save_session_to_memory,
@@ -105,7 +105,8 @@ app = App(
         compaction_interval=20,   # 20 invocation ごとにCompactionを実行
         overlap_size=2,           # 前回の要約範囲末尾から2 invocation重複
         summarizer=LlmEventSummarizer(
-            llm=Gemini(model="gemini-3.5-flash"),
+            # 要約用LLMもBedrock経由のClaudeを使う（文字列指定できないためLiteLlmを明示）
+            llm=LiteLlm(model="bedrock/global.anthropic.claude-sonnet-5-5"),
         ),
     ),
 )

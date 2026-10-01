@@ -22,7 +22,7 @@ def delete_file(path: str) -> None:
 # before_tool_callback も before_model_callback も設定していない
 root_agent = Agent(
     name="unguarded_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーのSQLクエリを実行し、必要に応じてファイル操作も行います。",
     tools=[execute_sql, delete_file],
     # 問題: before_tool_callback 未設定（権限チェックなし）

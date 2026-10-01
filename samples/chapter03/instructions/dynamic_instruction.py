@@ -48,6 +48,6 @@ def build_dynamic_instruction(ctx: ReadonlyContext) -> str:
 # 動的Instruction: callableを渡す
 support_agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=build_dynamic_instruction,
 )

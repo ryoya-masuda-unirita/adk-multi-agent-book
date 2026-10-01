@@ -77,7 +77,7 @@ approval_tool = LongRunningFunctionTool(func=request_human_approval)
 # HITLを組み込んだエージェント
 agent = Agent(
     name="cautious_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは注文管理エージェントです。
 以下のアクションを実行する前に、必ずrequest_human_approvalツールで承認を得てください:
 - 10万円以上の注文のキャンセル

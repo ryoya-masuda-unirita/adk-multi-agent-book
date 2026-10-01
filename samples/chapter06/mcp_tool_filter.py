@@ -18,7 +18,7 @@ postgres_server = StdioConnectionParams(
 # 読み取り専用ツールのみに制限
 readonly_agent = Agent(
     name="data_analyst",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="データベースを参照して分析を行います。データの変更は行いません。",
     tools=[
         McpToolset(

@@ -34,7 +34,7 @@ async def generate_report(
 # Artifactを保存するため、Runner側でartifact_serviceの構成が必要になる。
 agent = Agent(
     name="report_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの依頼に応じて generate_report ツールでレポートを作成してください。",
     tools=[generate_report],
 )

@@ -25,7 +25,7 @@ cd hello_adk
 cp .env.example .env
 ```
 
-`.env`に`GOOGLE_API_KEY`を設定してください。APIキーは https://aistudio.google.com/apikey から取得できます。Google Cloudプロジェクトは不要です。
+`.env`に`AWS_PROFILE=oic`を設定してください。LLMはAmazon Bedrock経由で呼び出します。Google Cloudプロジェクトは不要です。
 
 ## 実行
 

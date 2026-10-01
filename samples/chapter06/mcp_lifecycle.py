@@ -54,7 +54,7 @@ async def main():
     # runner.close()がToolsetのclose()をawaitしてリソースを解放する
     agent = Agent(
         name="file_agent",
-        model="gemini-3.5-flash",
+        model="bedrock/global.anthropic.claude-sonnet-5-5",
         instruction="ファイル操作を行うエージェントです。",
         tools=[
             McpToolset(connection_params=server_params),

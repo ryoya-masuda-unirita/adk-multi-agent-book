@@ -132,7 +132,7 @@ def after_model_with_metrics(
 # 可観測性を組み込んだエージェント
 observable_agent = Agent(
     name="observable_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの質問に回答します。",
     tools=[search_products],
     before_tool_callback=before_tool_with_metrics,

@@ -67,7 +67,7 @@ class OAuth2Middleware(BaseHTTPMiddleware):
 # 認証付きで公開する経費精算エージェント（最小構成）
 expense_agent = Agent(
     name="secure_expense_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="あなたは経費精算の専門エージェントです。経費の登録と照会の依頼に応答してください。",
 )
 

@@ -40,7 +40,7 @@ report_remote = RemoteA2aAgent(
 # オーケストレーター: LLMがどのエージェントを呼ぶか判断する
 orchestrator = Agent(
     name="report_orchestrator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはレポート作成のオーケストレーターです。
 
 ユーザーのリクエストに応じて、以下の手順で処理を進めてください:

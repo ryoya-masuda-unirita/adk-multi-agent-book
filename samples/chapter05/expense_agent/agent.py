@@ -9,7 +9,6 @@
 """
 
 from google.adk import Agent
-from google.genai.types import GenerateContentConfig
 
 try:
     from .callbacks import (
@@ -41,7 +40,7 @@ except ImportError:
 # 経費精算エージェントの定義
 root_agent = Agent(
     name="expense_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは経費精算を支援するエージェントです。
 ユーザーの依頼に応じて、以下の操作を行います。
 
@@ -60,7 +59,8 @@ root_agent = Agent(
 - 個人情報（メールアドレス、電話番号等）を応答に含めない
 """,
     tools=[submit_expense, query_expenses, approve_expense],
-    generate_content_config=GenerateContentConfig(temperature=0),
+    # Bedrock上のClaude Sonnet 5.5はtemperatureの指定を受け付けない（指定するとエラー）ため、
+    # generate_content_configでのtemperature=0指定は行わない
     # 入力ガードレールを先に通し、通過した入力だけを承認処理に渡す
     before_model_callback=[input_guardrail, handle_hitl_approval_input],
     after_model_callback=output_guardrail,

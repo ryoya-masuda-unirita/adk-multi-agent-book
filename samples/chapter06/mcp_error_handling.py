@@ -43,7 +43,7 @@ async def handle_tool_errors(
 
 agent = Agent(
     name="safe_file_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ファイル操作を安全に行うエージェントです。",
     tools=[
         McpToolset(connection_params=server_params),

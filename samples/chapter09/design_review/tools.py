@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 
 ALLOWED_MODEL_RECOMMENDATIONS = (
+    "bedrock/global.anthropic.claude-sonnet-5-5",
+    # google_searchなどGemini専用の組み込み機能を使う場合のみ許容する
     "gemini-3.5-flash",
 )
 FORBIDDEN_MODEL_RECOMMENDATIONS = (
@@ -273,7 +275,8 @@ def _model_policy() -> dict:
         "forbidden_recommendations": list(FORBIDDEN_MODEL_RECOMMENDATIONS),
         "message": (
             "ADK v2.2.0 前提のレビューでは、モデル提案は "
-            "gemini-3.5-flash に限定する。"
+            "bedrock/global.anthropic.claude-sonnet-5-5（Amazon Bedrock経由のClaude）に限定する。"
+            "Gemini専用の組み込み機能を使う場合のみ gemini-3.5-flash を許容する。"
             "gemini-1.5-flash、gemini-2.5-flash、gemini-3-flash-preview、"
             "gemini-3.1-pro-preview は古い例として提案しない。"
         ),
@@ -430,7 +433,7 @@ def check_design_rules(analysis_result: str) -> dict:
             "rule": "C-1",
             "message": "本書の検証対象外のモデルが使われています: "
                        f"{', '.join(non_standard_models)}。"
-                       "サンプルではgemini-3.5-flashを明示してください。",
+                       "サンプルではbedrock/global.anthropic.claude-sonnet-5-5を明示してください。",
         })
 
     legacy_models = sorted(
@@ -448,7 +451,7 @@ def check_design_rules(analysis_result: str) -> dict:
             "message": "古いモデル名が使われています: "
                        f"{', '.join(legacy_models)}。"
                        "ADK v2.2.0 前提の本書サンプルでは "
-                       "gemini-3.5-flash へ更新してください。",
+                       "bedrock/global.anthropic.claude-sonnet-5-5 へ更新してください。",
         })
 
     # --- 品質チェック ---

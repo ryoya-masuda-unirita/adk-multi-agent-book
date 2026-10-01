@@ -70,7 +70,7 @@ def cache_hit_check(
 
 agent = Agent(
     name="safe_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの質問に回答してください。",
     before_model_callback=route_by_language,
     after_model_callback=check_safety,

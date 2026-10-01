@@ -73,7 +73,7 @@ def safe_gcloud(subcommand: str, resource_name: str = "", flags: str = "") -> di
 # セキュリティ強化されたエージェント
 secure_gcloud_agent = Agent(
     name="secure_gcloud_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""Google Cloudリソースの参照を行うエージェントです。
     safe_gcloudツールでリソース情報を取得します。
     利用できるサブコマンドはホワイトリストで制限されています。""",

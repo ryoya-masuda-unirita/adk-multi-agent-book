@@ -47,7 +47,7 @@ search_engine = _DummySearchEngine()
 # 簡単なルーティング → 同じメインモデルを短いInstructionで低レイテンシ運用
 router_agent = Agent(
     name="router",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""ユーザーのリクエストを分類し、対応するエージェントに振り分けます。
     カテゴリ: search（検索）、order（注文）、support（サポート）""",
 )
@@ -55,7 +55,7 @@ router_agent = Agent(
 # 複雑な推論 → 同じメインモデルで深い分析用のInstructionを分離
 analysis_agent = Agent(
     name="analyzer",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""複雑なデータ分析と意思決定支援を行います。
     多角的な視点から分析し、根拠とともに推奨事項を提示します。""",
 )
@@ -90,6 +90,11 @@ def _price_from_env(name: str) -> float:
 # モデル別の料金テーブル。実運用では公式PricingのUSD/1M tokensを
 # USD/1K tokensへ換算し、環境変数から注入する。
 MODEL_PRICING_PER_1K = {
+    "bedrock/global.anthropic.claude-sonnet-5-5": {
+        "input": _price_from_env("CLAUDE_SONNET_5_5_INPUT_PER_1K"),
+        "output": _price_from_env("CLAUDE_SONNET_5_5_OUTPUT_PER_1K"),
+    },
+    # google_searchなどGemini専用機能を使うエージェント向け
     "gemini-3.5-flash": {
         "input": _price_from_env("GEMINI_3_5_FLASH_INPUT_PER_1K"),
         "input_over_200k": _price_from_env(
@@ -101,7 +106,7 @@ MODEL_PRICING_PER_1K = {
         ),
     },
 }
-DEFAULT_PRICING_MODEL = "gemini-3.5-flash"
+DEFAULT_PRICING_MODEL = "bedrock/global.anthropic.claude-sonnet-5-5"
 
 
 def _unit_price(pricing: dict[str, float], token_type: str, input_tokens: int) -> float:

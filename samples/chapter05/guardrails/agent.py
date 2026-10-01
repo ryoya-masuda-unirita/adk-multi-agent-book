@@ -12,7 +12,7 @@ except ImportError:
 
 agent = Agent(
     name="guarded_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="あなたはカスタマーサポートのエージェントです。",
     before_model_callback=input_safety_guardrail,
     after_model_callback=output_quality_guardrail,

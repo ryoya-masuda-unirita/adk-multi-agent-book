@@ -25,7 +25,7 @@ spanner_server = StdioConnectionParams(
 # Spannerデータ参照エージェント
 spanner_agent = Agent(
     name="spanner_reader",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはCloud Spannerのデータを参照する分析エージェントです。
 
     Spannerは分散データベースであり、以下の特性を理解した上でクエリを組み立ててください。

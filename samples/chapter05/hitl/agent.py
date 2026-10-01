@@ -87,7 +87,7 @@ def _get_last_user_message(llm_request):
 # HITL対応エージェントの定義
 agent = Agent(
     name="hitl_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction=(
         "あなたは業務システムの操作を支援するエージェントです。"
         "ユーザーのリクエストに応じて、必要なツールを使用して操作を実行します。"

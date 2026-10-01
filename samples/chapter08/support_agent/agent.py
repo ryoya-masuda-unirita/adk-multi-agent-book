@@ -1,8 +1,8 @@
 # samples/chapter08/support_agent/agent.py
 """Agent Engineデプロイ用カスタマーサポートエージェント
 
-ルーティングと専門エージェントを分け、各Agentでgemini-3.5-flashを
-明示するマルチエージェント構成の例。
+ルーティングと専門エージェントを分け、各Agentでbedrock/global.anthropic.claude-sonnet-5-5
+（Amazon Bedrock経由のClaude）を明示するマルチエージェント構成の例。
 """
 import json
 import logging
@@ -56,7 +56,7 @@ logger = _get_logger("support_agent")
 # FAQエージェント: 定型の質問に回答（短いInstruction + FAQ検索）
 faq_agent = Agent(
     name="faq_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはFAQ担当のサポートエージェントです。
 
 ## 役割
@@ -74,7 +74,7 @@ faq_agent = Agent(
 # 調査エージェント: 複雑な問い合わせに対応（同じモデルで専門ツールを分離）
 investigation_agent = Agent(
     name="investigation_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは調査担当のサポートエージェントです。
 
 ## 役割
@@ -94,7 +94,7 @@ investigation_agent = Agent(
 
 root_agent = Agent(
     name="support_router",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはカスタマーサポートのルーティングエージェントです。
 
 ## 役割

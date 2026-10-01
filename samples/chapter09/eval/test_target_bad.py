@@ -58,7 +58,7 @@ def schedule_task(cron: str, name: str) -> None:
 # アンチパターン: 12個のツールを1エージェントに詰め込む（A-2違反）
 root_agent = Agent(
     name="swiss_army_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーのあらゆるリクエストに応えます。",
     tools=[
         search_db, fetch_user, update_user,

@@ -11,7 +11,7 @@ from google.adk.plugins.global_instruction_plugin import GlobalInstructionPlugin
 # サブエージェント: 注文管理
 order_agent = Agent(
     name="order_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""注文に関する問い合わせに対応します。
 - 注文状況の確認
 - キャンセル処理
@@ -21,7 +21,7 @@ order_agent = Agent(
 # サブエージェント: 返品管理
 return_agent = Agent(
     name="return_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""返品・交換に関する問い合わせに対応します。
 - 返品条件の確認
 - 返品手続きの案内
@@ -31,7 +31,7 @@ return_agent = Agent(
 # ルートエージェント: 業務固有のルーティングInstructionだけを持つ
 root_agent = Agent(
     name="root_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="あなたは顧客サポートのコーディネーターです。問い合わせ内容に対応する担当エージェントに振り分けてください。",
     sub_agents=[order_agent, return_agent],
 )

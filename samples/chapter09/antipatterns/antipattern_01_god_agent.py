@@ -118,7 +118,7 @@ def verify_payment(payment_id: str) -> dict:
 # アンチパターン: God Agent
 god_agent = Agent(
     name="god_agent",
-    model="gemini-3.5-flash",  # 長いInstructionと大量ツールでコストが増える
+    model="bedrock/global.anthropic.claude-sonnet-5-5",  # 長いInstructionと大量ツールでコストが増える
     instruction="""あなたは万能アシスタントです。以下のすべてのタスクを処理してください:
     1. 商品検索と推薦
     2. 注文の作成・変更・キャンセル
@@ -148,21 +148,21 @@ god_agent = Agent(
 # 改善: 責務ごとに分割
 search_agent = Agent(
     name="search_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="商品の検索と推薦を行います。",
     tools=[search_products, recommend_products],
 )
 
 order_agent = Agent(
     name="order_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="注文の作成・変更・キャンセルを処理します。",
     tools=[create_order, update_order, cancel_order],
 )
 
 support_agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="カスタマーサポートの問い合わせに回答します。",
     tools=[search_faq, answer_question, track_shipping],
 )
@@ -170,7 +170,7 @@ support_agent = Agent(
 # ルーターで振り分け
 router = Agent(
     name="router",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""ユーザーのリクエストを対応するエージェントに振り分けます。
     - 商品の検索・推薦 → search_agent
     - 注文関連 → order_agent

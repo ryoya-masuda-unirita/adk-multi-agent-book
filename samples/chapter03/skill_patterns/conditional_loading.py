@@ -33,7 +33,7 @@ def create_agent_with_skills(user_role: str) -> Agent:
 
     return Agent(
         name="support_agent",
-        model="gemini-3.5-flash",
+        model="bedrock/global.anthropic.claude-sonnet-5-5",
         instruction="あなたはカスタマーサポートエージェントです。",
         tools=[SkillToolset(skills=skills)],
     )

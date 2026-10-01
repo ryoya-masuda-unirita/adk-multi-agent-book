@@ -32,7 +32,7 @@ weather_tool = FunctionTool(func=get_weather)
 # エージェントに渡す
 agent = Agent(
     name="weather_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーが天気を聞いたら、get_weatherツールで調べてから回答してください。",
     tools=[weather_tool],
 )

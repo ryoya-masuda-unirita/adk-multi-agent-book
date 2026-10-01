@@ -9,7 +9,7 @@ from google.adk import Agent
 
 root_agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはカスタマーサポートエージェントです。
 ユーザーの問い合わせに簡潔に回答してください。
 事実のみを回答し、推測は行わないでください。""",

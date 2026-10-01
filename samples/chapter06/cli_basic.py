@@ -41,7 +41,7 @@ def run_gcloud_command(command: str) -> dict:
 # gcloudツールを使うエージェント
 gcloud_agent = Agent(
     name="gcloud_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはGoogle Cloudリソースの管理を支援するエージェントです。
 
     gcloudコマンドを使ってリソースの参照・管理を行います。

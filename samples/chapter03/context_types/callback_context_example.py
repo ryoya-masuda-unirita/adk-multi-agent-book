@@ -37,7 +37,7 @@ def before_model_callback(
 # 補完: 紙面ではコールバック関数のみ掲載。エージェントへの組み込み例。
 agent = Agent(
     name="rate_limited_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの質問に回答してください。",
     before_model_callback=before_model_callback,
 )

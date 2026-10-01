@@ -94,7 +94,7 @@ def create_order(
 # 冪等なツールを持つエージェント
 order_agent = Agent(
     name="order_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""注文処理を行います。
     注文作成時は必ずidempotency_keyを指定してください。
     同じ顧客・商品・数量の組み合わせには同じキーを使用します。""",

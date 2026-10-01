@@ -24,21 +24,21 @@ except ImportError:
 # 良い例: 権限レベルに応じてエージェントを分離
 read_only_agent = Agent(
     name="reader_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="顧客データの参照のみを行います。データの変更はできません。",
     tools=[read_customer_data],  # 読み取り専用ツールのみ
 )
 
 write_agent = Agent(
     name="writer_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="顧客データの参照と更新を行います。削除はできません。",
     tools=[read_customer_data, update_customer_data],  # 更新まで
 )
 
 admin_agent = Agent(
     name="admin_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="顧客データの全操作を行います。削除操作は実行前に確認を求めてください。",
     tools=[read_customer_data, update_customer_data, delete_customer_data],
 )

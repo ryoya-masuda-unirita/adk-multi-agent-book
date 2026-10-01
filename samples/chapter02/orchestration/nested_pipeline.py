@@ -56,7 +56,7 @@ activity_tool = FunctionTool(func=search_activity_options)
 # === 並列検索フェーズ ===
 flight_search = Agent(
     name="flight_search",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="航空券を検索してください。",
     output_key="flights",
     tools=[flight_tool],
@@ -64,7 +64,7 @@ flight_search = Agent(
 
 hotel_search = Agent(
     name="hotel_search",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ホテルを検索してください。",
     output_key="hotels",
     tools=[hotel_tool],
@@ -72,7 +72,7 @@ hotel_search = Agent(
 
 activity_search = Agent(
     name="activity_search",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="アクティビティを検索してください。",
     output_key="activities",
     tools=[activity_tool],
@@ -86,7 +86,7 @@ research_phase = ParallelAgent(
 # === プランニングフェーズ ===
 planner = Agent(
     name="planner",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="検索結果を統合して旅行プランを作成してください。",
     output_key="travel_plan",
 )
@@ -94,7 +94,7 @@ planner = Agent(
 # === レポート生成フェーズ ===
 reporter = Agent(
     name="reporter",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="旅行プランを読みやすいレポートにまとめてください。",
 )
 

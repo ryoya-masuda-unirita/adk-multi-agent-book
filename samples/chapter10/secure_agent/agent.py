@@ -17,7 +17,7 @@ from .tools import lookup_customer, process_refund, update_subscription
 
 root_agent = Agent(
     name="secure_support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはカスタマーサポートエージェントです。
 
 ## 役割

@@ -101,22 +101,17 @@ cd samples/chapter01/hello_adk
 cp .env.example .env
 ```
 
-Google AI Studioで発行したAPIキーを使う場合は、次の2行を設定します。APIキーは https://aistudio.google.com/apikey から取得できます。
+このリポジトリのLLM呼び出しは、Amazon Bedrock上のモデルをLiteLLM経由で使います。認証は`~/.aws/config`の`oic`プロファイルです。`.env`には次の1行を設定します。
 
 ```bash
-GOOGLE_API_KEY=your-api-key
-GOOGLE_GENAI_USE_VERTEXAI=FALSE
+AWS_PROFILE=oic
 ```
 
-Vertex AI経由で実行する場合は、上の2行ではなく次の3行を設定します。
+ADKは`model="bedrock/..."`という文字列を自動でLiteLLMに振り分けます。LiteLLMはboto3の標準認証チェーンで認証するため、プロファイル名を指定するだけで動きます。プロファイルにregionが設定されていない場合は、`AWS_REGION`もあわせて指定してください。
 
-```bash
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=your-project-id
-GOOGLE_CLOUD_LOCATION=us-central1
-```
+`adk run`／`adk web`で起動する場合は、エージェントディレクトリの`.env`が自動で読み込まれます。`python xxx.py`で単体実行するファイルは`.env`を読まないので、シェルで`export AWS_PROFILE=oic`を実行してください。
 
-`GOOGLE_GENAI_USE_VERTEXAI=TRUE`と`GOOGLE_API_KEY`を併記するとVertex AI経路が優先されます。APIキーを設定したのに`PERMISSION_DENIED`が返る場合は、`.env`にプレースホルダのままの`GOOGLE_CLOUD_PROJECT`が残っていないかを確認してください。エージェントディレクトリの`.env`自動読み込みは`ADK_DISABLE_LOAD_DOTENV=1`で止められます。
+`google_search`と`BuiltInCodeExecutor`はGemini専用の組み込み機能です。これらを使う`samples/chapter02/tools/builtin_tools.py`の2エージェントは、Geminiのまま残しています。このファイルを動かす場合だけ`GOOGLE_API_KEY`が必要です。
 
 Google Cloudのサービスを使う章では、あわせてADC（Application Default Credentials）を設定します。
 
@@ -152,14 +147,15 @@ gcloud services enable aiplatform.googleapis.com
 
 実行にかかる費用はモデル呼び出し回数とGoogle Cloudサービスの利用量に応じて変わります。課金状況はGoogle Cloud Consoleの「お支払い」ページで確認してください。
 
-第1章から第3章、第7章、第9章のサンプルは、第2章と第7章の`auth/`配下のサンプル（追加の認証設定が必要。各章のREADMEを参照）を除き、APIキーだけで動きます。第7章のA2A通信もローカルプロセス間で完結するため、Google Cloudプロジェクトは不要です。
+第1章から第3章、第7章、第9章のサンプルは、第2章と第7章の`auth/`配下のサンプル（追加の認証設定が必要。各章のREADMEを参照）を除き、AWSの`oic`プロファイルだけで動きます。第7章のA2A通信もローカルプロセス間で完結するため、Google Cloudプロジェクトは不要です。
 
 ### うまく動かないとき
 
 | 症状 | 確認すること |
 |---|---|
-| `GOOGLE_API_KEY not set` | エージェントディレクトリに`.env`があるか、キーの値が入っているか |
-| `PERMISSION_DENIED` | `GOOGLE_GENAI_USE_VERTEXAI`の値と、`GOOGLE_CLOUD_PROJECT`がプレースホルダのままでないか |
+| `NoCredentialsError`／`Unable to locate credentials` | `AWS_PROFILE=oic`が設定されているか、`aws sts get-caller-identity --profile oic`が通るか |
+| `AccessDeniedException`（Bedrock） | 使用するモデルがBedrockで有効化されているか、推論プロファイルIDが正しいか |
+| `temperature is deprecated for this model` | Claude Sonnet 5.5系は`temperature`を受け付けない。`generate_content_config`から外す |
 | `API not enabled` | 該当するGoogle Cloud APIを`gcloud services enable`で有効化したか |
 | 認証エラーが頻発する | `gcloud auth application-default login`を再実行したか（トークンの期限切れ） |
 | importエラー | その章の`requirements.txt`をインストールしたか（章ごとにextrasが異なる） |

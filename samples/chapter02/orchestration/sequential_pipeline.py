@@ -9,7 +9,7 @@ from google.adk.agents import SequentialAgent
 # ステップ1: データ収集
 collector = Agent(
     name="data_collector",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの質問に関連するデータを収集してください。",
     output_key="collected_data",
 )
@@ -17,7 +17,7 @@ collector = Agent(
 # ステップ2: データ分析
 analyzer = Agent(
     name="data_analyzer",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="収集されたデータを分析し、主要な傾向とインサイトを抽出してください。",
     output_key="analysis_result",
 )
@@ -25,7 +25,7 @@ analyzer = Agent(
 # ステップ3: レポート生成
 reporter = Agent(
     name="report_generator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="分析結果をもとに、経営層向けのレポートを作成してください。",
     output_key="final_report",
 )

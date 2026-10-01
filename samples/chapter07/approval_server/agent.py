@@ -31,7 +31,7 @@ except ImportError:
 # 承認エージェントの定義
 approval_agent = Agent(
     name="approval_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは経費精算の承認を管理する専門エージェントです。
 経費の承認申請を受け付け、承認ルールに基づいて処理します。
 

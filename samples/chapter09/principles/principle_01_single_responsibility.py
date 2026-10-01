@@ -34,7 +34,7 @@ def answer_question(question: str) -> dict:
 # 悪い例: 1つのエージェントに複数責務
 bad_agent = Agent(
     name="do_everything_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは万能アシスタントです。
     ユーザーの質問に回答し、データベースを検索し、
     レポートを作成し、メールを送信してください。""",
@@ -45,7 +45,7 @@ bad_agent = Agent(
 # 検索エージェント
 search_agent = Agent(
     name="search_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="ユーザーの要求に基づいてデータベースを検索し、結果を返します。",
     tools=[search_db],
 )
@@ -53,7 +53,7 @@ search_agent = Agent(
 # レポート生成エージェント
 report_agent = Agent(
     name="report_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="検索結果をもとに、指定されたフォーマットでレポートを生成します。",
     tools=[generate_report],
 )
@@ -61,7 +61,7 @@ report_agent = Agent(
 # 通知エージェント
 notification_agent = Agent(
     name="notification_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="生成されたレポートを指定された宛先にメールで送信します。",
     tools=[send_email],
 )

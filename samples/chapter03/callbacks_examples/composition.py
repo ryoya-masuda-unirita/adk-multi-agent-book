@@ -64,7 +64,7 @@ def inject_context(ctx: CallbackContext, req: LlmRequest) -> Optional[LlmRespons
 # コールバックの合成
 agent = Agent(
     name="support_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="...",
     before_model_callback=compose_before_model_callbacks(
         log_request,        # 1. ログ記録

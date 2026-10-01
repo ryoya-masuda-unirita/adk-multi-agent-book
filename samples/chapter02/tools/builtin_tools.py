@@ -10,6 +10,7 @@ from google.adk.tools.bash_tool import ExecuteBashTool
 
 # === google_search: Google検索 ===
 # Gemini API版のgoogle_searchは単独ツールとしての利用が前提
+# Gemini専用の組み込みツールのため、このエージェントだけはBedrockではなくGeminiを使う
 research_agent = Agent(
     name="research_agent",
     model="gemini-3.5-flash",
@@ -19,6 +20,7 @@ research_agent = Agent(
 
 # === BuiltInCodeExecutor: コード実行 ===
 # toolsではなくcode_executor引数に渡す点に注意
+# Geminiのサーバー側コード実行機能のため、このエージェントだけはGeminiを使う
 data_analyst = Agent(
     name="data_analyst",
     model="gemini-3.5-flash",
@@ -33,7 +35,7 @@ bash_tool = ExecuteBashTool()
 
 ops_agent = Agent(
     name="ops_agent",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="システム管理タスクを実行してください。",
     tools=[bash_tool],
 )

@@ -18,7 +18,7 @@ from . import tools
 # --- 調査フェーズ: 3つの専門エージェントが並列で情報を収集 ---
 
 spot_researcher = Agent(
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     name="spot_researcher",
     instruction=(
         "あなたは観光スポットの専門家です。"
@@ -30,7 +30,7 @@ spot_researcher = Agent(
 )
 
 restaurant_researcher = Agent(
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     name="restaurant_researcher",
     instruction=(
         "あなたはグルメの専門家です。"
@@ -42,7 +42,7 @@ restaurant_researcher = Agent(
 )
 
 transport_researcher = Agent(
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     name="transport_researcher",
     instruction=(
         "あなたは交通手段の専門家です。"
@@ -62,7 +62,7 @@ research_phase = ParallelAgent(
 # --- 計画フェーズ: 調査結果を統合して計画を立てる ---
 
 schedule_planner = Agent(
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     name="schedule_planner",
     instruction=(
         "あなたは旅行スケジュールの作成担当です。"
@@ -77,7 +77,7 @@ schedule_planner = Agent(
 )
 
 budget_reporter = Agent(
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     name="budget_reporter",
     instruction=(
         "あなたは旅行予算の計算担当です。"

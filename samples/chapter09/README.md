@@ -38,7 +38,7 @@ cd design_review
 cp .env.example .env
 ```
 
-APIキーだけで動きます。Google Cloudプロジェクトは不要です。`requirements.txt`はADKの`eval` extraを指定しています。
+AWSの`oic`プロファイル（Amazon Bedrock）だけで動きます。Google Cloudプロジェクトは不要です。`requirements.txt`はADKの`eval` extraを指定しています。
 
 ## 実行
 

@@ -9,7 +9,7 @@ from google.adk.tools import AgentTool
 # 専門家エージェント: 税務計算
 tax_calculator = Agent(
     name="tax_calculator",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは税務計算の専門家です。
 与えられた金額と条件に基づいて、正確な税額を計算してください。
 消費税、所得税、住民税の計算に対応しています。""",
@@ -18,7 +18,7 @@ tax_calculator = Agent(
 # 専門家エージェント: 法務相談
 legal_advisor = Agent(
     name="legal_advisor",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたは法務アドバイザーです。
 契約条件、利用規約、法的リスクについてアドバイスしてください。""",
 )
@@ -26,7 +26,7 @@ legal_advisor = Agent(
 # メインエージェント: 必要に応じて専門家をツールとして呼び出す
 main_agent = Agent(
     name="business_consultant",
-    model="gemini-3.5-flash",
+    model="bedrock/global.anthropic.claude-sonnet-5-5",
     instruction="""あなたはビジネスコンサルタントです。
 税務に関する質問にはtax_calculatorツールを、法務に関する質問にはlegal_advisorツールを使用してください。""",
     tools=[
