@@ -11,7 +11,7 @@
 | `secure_agent/kill_switch.py` | Kill Switch実装（グローバル／エージェント単位／ツール単位、スレッドセーフ） |
 | `secure_agent/escalation.py` | 深刻度に応じた4段階のエスカレーション（警告 → 制限 → 停止 → 人間介入） |
 | `secure_agent/audit_log.py` | PIIマスキング付きの構造化JSON監査ログ |
-| `secure_agent/cloud_audit_integration.py` | 監査イベントのCloud Logging送出 |
+| `secure_agent/cloud_audit_integration.py` | 監査イベントのCloudWatch Logs送出 |
 | `secure_agent/tools.py` | 権限チェック対象の顧客データ操作ツール |
 | `prompt_injection_guard.py` | 直接プロンプトインジェクション対策（before_model_callback） |
 | `indirect_injection_guard.py` | 間接プロンプトインジェクション対策（after_tool_callback） |
@@ -40,7 +40,7 @@ cd secure_agent
 cp .env.example .env
 ```
 
-`requirements.txt`はADKの`gcp` extraに加えて、`google-cloud-logging`（監査ログのCloud Logging連携）、`boto3`（BedrockとAWS Secrets Managerからの認証情報の取得）、`PyJWT[crypto]`（A2AのJWT検証）を含みます。
+`requirements.txt`はADKに加えて、`boto3`（Bedrock、AWS Secrets Managerからの認証情報の取得、監査ログのCloudWatch Logs連携）、`PyJWT[crypto]`（A2AのJWT検証）を含みます。
 
 ## 実行
 
@@ -62,9 +62,9 @@ http://localhost:8000 を開き、エージェント一覧から`secure_agent`�
 
 ターミナルで対話実行する場合は`adk run secure_agent`を使います。
 
-## Google Cloudが必要なサンプル
+## AWSのリソースが必要なサンプル
 
-`secure_agent/cloud_audit_integration.py`はCloud Loggingを使うため、Google Cloudプロジェクトと該当APIの有効化が前提です。認証はADC（Application Default Credentials）を使います。`secure_tool_auth.py`はAWS Secrets Managerを使い、Bedrockと同じAWSプロファイルで認証します。それ以外のサンプルはAPIキーだけで動きます。
+`secure_agent/cloud_audit_integration.py`はCloudWatch Logsを使うため、送出先のロググループ（既定は`/agent/audit`）を事前に作成しておきます。`secure_tool_auth.py`はAWS Secrets Managerを使います。どちらもBedrockと同じAWSプロファイルで認証します。それ以外のサンプルはBedrockの認証だけで動きます。
 
 `a2a_oauth2_verify.py`と`a2a_mtls_config.py`は、第7章のA2Aサーバーに組み込むことを想定した部品です。単体では動作確認できません。mTLSの検証には証明書・秘密鍵・CA証明書のパスが必要です。
 

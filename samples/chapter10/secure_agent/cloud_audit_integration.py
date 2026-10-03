@@ -1,29 +1,42 @@
 # samples/chapter10/secure_agent/cloud_audit_integration.py
-"""Cloud Logging統合（10-5-2節）
+"""CloudWatch Logs統合（10-5-2節）
 
-エージェントの監査イベントを Cloud Logging のカスタムログとして送出する。
-Google Cloud のサービス管理操作・データアクセスを記録する Cloud Audit Logs
-とは別物だが、Cloud Logging から横断検索することで統合的に分析できる。
+エージェントの監査イベントを Amazon CloudWatch Logs に構造化ログ（JSON）として送出する。
+AWSのサービス管理操作・データアクセスを記録する AWS CloudTrail とは別物だが、
+CloudWatch Logs Insights から横断検索することで統合的に分析できる。
 
-実行時依存: google-cloud-logging パッケージが必要
-    pip install google-cloud-logging
-認証は Application Default Credentials（ADC）を使用する。
-    gcloud auth application-default login
+実行時依存: boto3 パッケージが必要
+認証はboto3の標準認証チェーン（環境変数 AWS_PROFILE など）を使用する。
+送出先のロググループ（既定: /agent/audit）は事前に作成しておく。
 """
 import json
+import time
 from datetime import datetime, timedelta, timezone
 
-from google.cloud import logging as cloud_logging
+import boto3
 
 JST = timezone(timedelta(hours=9))
 
 
 class CloudAuditLogger:
-    """Cloud Loggingに監査ログを送信する"""
+    """CloudWatch Logsに監査ログを送信する"""
 
-    def __init__(self, project_id: str, log_name: str = "agent-audit"):
-        self.client = cloud_logging.Client(project=project_id)
-        self.logger = self.client.logger(log_name)
+    def __init__(
+        self,
+        log_group: str = "/agent/audit",
+        log_stream: str = "agent-audit",
+        region_name: str | None = None,
+    ):
+        self.client = boto3.client("logs", region_name=region_name)
+        self.log_group = log_group
+        self.log_stream = log_stream
+        # ログストリーム（ロググループ内の送出単位）が無ければ作成する
+        try:
+            self.client.create_log_stream(
+                logGroupName=log_group, logStreamName=log_stream
+            )
+        except self.client.exceptions.ResourceAlreadyExistsException:
+            pass
 
     def log_agent_action(
         self,
@@ -42,11 +55,17 @@ class CloudAuditLogger:
             "session_id": session_id,
             "timestamp": datetime.now(JST).isoformat(),
             "details": details or {},
+            # CloudWatch Logsには重要度やラベルの専用欄が無いため、JSONの項目として持たせる
+            "severity": severity,
+            "component": "agent-system",
         }
-        self.logger.log_struct(
-            entry,
-            severity=severity,
-            labels={"component": "agent-system", "agent_name": agent_name},
+        self.client.put_log_events(
+            logGroupName=self.log_group,
+            logStreamName=self.log_stream,
+            logEvents=[{
+                "timestamp": int(time.time() * 1000),
+                "message": json.dumps(entry, ensure_ascii=False),
+            }],
         )
 
     def log_security_event(
@@ -62,7 +81,7 @@ class CloudAuditLogger:
         引数順は10-5-1節の `AuditLogger.log_security_event` と揃えている。
         ローカル監査（`AuditLogger`）と Cloud 連携（`CloudAuditLogger`）を
         用途に応じて使い分けられる。
-        ただし `details` の型は Cloud Logging が構造化データを扱うため
+        ただし `details` の型は CloudWatch Logs に構造化データとして送るため
         `dict` とし、`AuditLogger`（JSON 文字列化した `str`）とは異なる。
         呼び出し側は送信先に合わせて型を組み立てる。
         """

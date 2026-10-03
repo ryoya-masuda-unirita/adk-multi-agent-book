@@ -49,7 +49,7 @@ class AuditLogger:
     """構造化された監査ログの記録
 
     全イベントをJSON形式でログ出力する。
-    本番環境ではCloud Loggingに自動送信される。
+    本番環境では、標準出力のログがCloudWatch Logsに自動送信される。
     """
 
     def log_llm_request(
