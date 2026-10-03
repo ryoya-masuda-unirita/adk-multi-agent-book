@@ -11,12 +11,12 @@ TOOL_CATALOG = {
         "risk_level": "medium",  # データ参照可能
         "approval_required": False,
     },
-    "cloudsql": {
+    "rds": {
         "type": "mcp",
         "package": "@toolbox-sdk/server",
-        "config": "tools-cloudsql.yaml",
-        "description": "Cloud SQL（PostgreSQL/MySQL）への接続",
-        "required_iam_roles": ["roles/cloudsql.viewer"],
+        "config": "tools-rds.yaml",
+        "description": "Amazon RDS（PostgreSQL/MySQL）への接続",
+        "required_iam_roles": ["AmazonRDSReadOnlyAccess"],
         "risk_level": "high",  # 本番DBへのアクセス
         "approval_required": True,
     },

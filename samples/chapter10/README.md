@@ -19,7 +19,7 @@
 | `hardened_instruction.py` | 攻撃耐性を高めたInstructionの記述例 |
 | `output_filter.py` | 機密情報パターンによる出力フィルタリング |
 | `tool_auth.py` | ツールごとの必要権限の定義とチェック |
-| `secure_tool_auth.py` | Secret Managerからの認証情報取得 |
+| `secure_tool_auth.py` | AWS Secrets Managerからの認証情報取得 |
 | `least_privilege.py` | 最小権限に基づくツール割り当て |
 | `execution_limiter.py` | セッションあたりのツール実行回数の制限 |
 | `kill_switch_example.py` | Kill Switchの単体実装（`secure_agent/kill_switch.py`の元になる形） |
@@ -40,7 +40,7 @@ cd secure_agent
 cp .env.example .env
 ```
 
-`requirements.txt`はADKの`gcp` extraに加えて、`google-cloud-logging`（監査ログのCloud Logging連携）、`google-cloud-secret-manager`（認証情報の取得）、`PyJWT[crypto]`（A2AのJWT検証）を含みます。
+`requirements.txt`はADKの`gcp` extraに加えて、`google-cloud-logging`（監査ログのCloud Logging連携）、`boto3`（BedrockとAWS Secrets Managerからの認証情報の取得）、`PyJWT[crypto]`（A2AのJWT検証）を含みます。
 
 ## 実行
 
@@ -64,7 +64,7 @@ http://localhost:8000 を開き、エージェント一覧から`secure_agent`�
 
 ## Google Cloudが必要なサンプル
 
-`secure_agent/cloud_audit_integration.py`はCloud Logging、`secure_tool_auth.py`はSecret Managerを使うため、Google Cloudプロジェクトと該当APIの有効化が前提です。認証はADC（Application Default Credentials）を使います。それ以外のサンプルはAPIキーだけで動きます。
+`secure_agent/cloud_audit_integration.py`はCloud Loggingを使うため、Google Cloudプロジェクトと該当APIの有効化が前提です。認証はADC（Application Default Credentials）を使います。`secure_tool_auth.py`はAWS Secrets Managerを使い、Bedrockと同じAWSプロファイルで認証します。それ以外のサンプルはAPIキーだけで動きます。
 
 `a2a_oauth2_verify.py`と`a2a_mtls_config.py`は、第7章のA2Aサーバーに組み込むことを想定した部品です。単体では動作確認できません。mTLSの検証には証明書・秘密鍵・CA証明書のパスが必要です。
 

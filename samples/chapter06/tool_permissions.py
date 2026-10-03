@@ -5,7 +5,7 @@
 AGENT_ROLES = {
     "data_analyst": {
         "allowed_tools": ["bigquery"],
-        "denied_tools": ["cloudsql", "gcloud", "kubectl"],
+        "denied_tools": ["rds", "gcloud", "kubectl"],
         "max_risk_level": "medium",
     },
     "sre_operator": {
@@ -14,7 +14,7 @@ AGENT_ROLES = {
         "max_risk_level": "high",
     },
     "db_administrator": {
-        "allowed_tools": ["cloudsql", "bigquery"],
+        "allowed_tools": ["rds", "bigquery"],
         "denied_tools": ["gcloud", "kubectl"],
         "max_risk_level": "high",
     },

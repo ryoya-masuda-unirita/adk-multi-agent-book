@@ -1,0 +1,15 @@
+# samples/chapter06/tools-rds.yaml
+kind: source
+name: my-pg
+type: postgres
+host: ${DB_HOST}
+port: 5432
+database: mydb
+user: app-user
+password: ${DB_PASSWORD}
+---
+kind: tool
+name: execute_query
+type: postgres-execute-sql
+source: my-pg
+description: Amazon RDS (PostgreSQL) にSQLクエリを実行する

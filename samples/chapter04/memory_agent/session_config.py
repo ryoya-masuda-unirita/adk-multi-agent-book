@@ -4,7 +4,6 @@ import os
 from google.adk.sessions import (
     InMemorySessionService,
     DatabaseSessionService,
-    VertexAiSessionService,
 )
 from google.adk.memory import (
     InMemoryMemoryService,
@@ -28,22 +27,18 @@ def create_session_service():
             )
         return DatabaseSessionService(db_url=db_url)
     else:
-        # 本番: Vertex AIマネージドストレージ
-        project = os.environ.get("GCP_PROJECT")
-        location = os.environ.get("GCP_LOCATION", "us-central1")
-        agent_engine_id = os.environ.get("AGENT_ENGINE_ID")
-        if not project:
+        # 本番: Amazon RDS（PostgreSQL）に永続化。通信はTLSで暗号化する
+        rds_endpoint = os.environ.get("RDS_ENDPOINT")
+        if not rds_endpoint:
             raise ValueError(
-                "AGENT_ENV=prod では GCP_PROJECT の設定が必要です"
+                "AGENT_ENV=prod では RDS_ENDPOINT の設定が必要です"
             )
-        if not agent_engine_id:
-            raise ValueError(
-                "AGENT_ENV=prod では AGENT_ENGINE_ID の設定が必要です"
-            )
-        return VertexAiSessionService(
-            project=project,
-            location=location,
-            agent_engine_id=agent_engine_id,
+        db_user = os.environ["DB_USER"]
+        db_password = os.environ["DB_PASSWORD"]
+        db_name = os.environ["DB_NAME"]
+        return DatabaseSessionService(
+            db_url=f"postgresql+asyncpg://{db_user}:{db_password}"
+                   f"@{rds_endpoint}:5432/{db_name}?ssl=require"
         )
 
 

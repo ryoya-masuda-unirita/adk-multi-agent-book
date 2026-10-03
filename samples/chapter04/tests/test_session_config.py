@@ -5,7 +5,8 @@ samples/chapter04/ ディレクトリから `python -m pytest` で実行する�
 （`python -m` がカレントディレクトリをsys.pathに追加するため、
  memory_agent パッケージを絶対インポートで解決できる）
 
-GCP接続は不要。dev環境（InMemory）とstaging環境（SQLite）のみ検証する。
+クラウドへの接続は不要。dev環境（InMemory）とstaging環境（SQLite）に加えて、
+prod環境（RDS）はサービスの生成だけを検証する（接続はしない）。
 """
 import pytest
 from google.adk.sessions import DatabaseSessionService, InMemorySessionService
@@ -39,14 +40,24 @@ class TestCreateSessionService:
         service = create_session_service()
         assert isinstance(service, DatabaseSessionService)
 
-    def test_prod_requires_agent_engine_id(self, monkeypatch):
-        """prod環境ではAGENT_ENGINE_IDが必須"""
+    def test_prod_requires_rds_endpoint(self, monkeypatch):
+        """prod環境ではRDS_ENDPOINTが必須"""
         monkeypatch.setenv("AGENT_ENV", "prod")
-        monkeypatch.setenv("GCP_PROJECT", "test-project")
-        monkeypatch.setenv("GCP_LOCATION", "us-central1")
-        monkeypatch.delenv("AGENT_ENGINE_ID", raising=False)
-        with pytest.raises(ValueError, match="AGENT_ENGINE_ID"):
+        monkeypatch.delenv("RDS_ENDPOINT", raising=False)
+        with pytest.raises(ValueError, match="RDS_ENDPOINT"):
             create_session_service()
+
+    def test_prod_returns_database(self, monkeypatch):
+        """prod環境ではDatabaseSessionService（RDS）が返ること"""
+        monkeypatch.setenv("AGENT_ENV", "prod")
+        monkeypatch.setenv(
+            "RDS_ENDPOINT", "mydb.xxxx.ap-northeast-1.rds.amazonaws.com"
+        )
+        monkeypatch.setenv("DB_USER", "app-user")
+        monkeypatch.setenv("DB_PASSWORD", "test-password")
+        monkeypatch.setenv("DB_NAME", "agent_db")
+        service = create_session_service()
+        assert isinstance(service, DatabaseSessionService)
 
 
 class TestCreateMemoryService:

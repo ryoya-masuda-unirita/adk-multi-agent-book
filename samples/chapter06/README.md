@@ -1,6 +1,6 @@
 # 第6章 MCP & ツール統合
 
-外部システムをエージェントのツールとして取り込むサンプルです。MCP（Model Context Protocol）サーバーへのstdio接続とStreamable HTTP接続、MCP Toolbox経由でのBigQuery／Cloud SQL／Spanner／Firestore統合、CLIコマンドのラッパー化を収録しています。ハンズオンの成果物は`infra_monitor/`で、BigQuery MCPサーバー（ログ分析）とkubectlラッパー（Kubernetes状態確認）を組み合わせたインフラ監視エージェントです。
+外部システムをエージェントのツールとして取り込むサンプルです。MCP（Model Context Protocol）サーバーへのstdio接続とStreamable HTTP接続、MCP Toolbox経由でのBigQuery／Amazon RDS／Spanner／Firestore統合、CLIコマンドのラッパー化を収録しています。ハンズオンの成果物は`infra_monitor/`で、BigQuery MCPサーバー（ログ分析）とkubectlラッパー（Kubernetes状態確認）を組み合わせたインフラ監視エージェントです。
 
 ## 収録内容
 
@@ -15,7 +15,7 @@
 | `mcp_lifecycle.py` | Runnerによる接続ライフサイクルの自動管理 |
 | `mcp_error_handling.py` | MCPツール呼び出しのエラーハンドリング |
 | `mcp_bigquery.py`／`tools.yaml` | BigQuery MCPサーバー（MCP Toolbox）との統合 |
-| `mcp_cloudsql.py`／`tools-cloudsql.yaml` | Cloud SQL MCPサーバーとの統合 |
+| `mcp_rds.py`／`tools-rds.yaml` | Amazon RDS（PostgreSQL）MCPサーバーとの統合 |
 | `mcp_spanner.py`／`tools-spanner.yaml` | Spanner MCPサーバーとの統合 |
 | `mcp_firestore.py`／`tools-firestore.yaml` | Firestore MCPサーバーとの統合 |
 | `cli_basic.py` | gcloud CLIをツール化する基本パターン |
@@ -64,6 +64,8 @@ adk run infra_monitor
 
 ## Google Cloudが必要なサンプル
 
-`mcp_bigquery.py`、`mcp_cloudsql.py`、`mcp_spanner.py`、`mcp_firestore.py`、および`ENABLE_BIGQUERY_MCP=1`での`infra_monitor`は、Google Cloudプロジェクトと該当サービスの有効化が前提です。クエリの実行に応じて課金が発生します。
+`mcp_bigquery.py`、`mcp_spanner.py`、`mcp_firestore.py`、および`ENABLE_BIGQUERY_MCP=1`での`infra_monitor`は、Google Cloudプロジェクトと該当サービスの有効化が前提です。クエリの実行に応じて課金が発生します。
+
+`mcp_rds.py`はAmazon RDS（PostgreSQL）に接続します。環境変数`DB_HOST`（RDSのエンドポイント）と`DB_PASSWORD`を設定してください。`DB_HOST`を省略するとlocalhostに接続するため、ローカルのPostgreSQLでも試せます。
 
 CLIラッパーのサンプルは実際に`gcloud`／`kubectl`／`terraform`を呼び出します。読み取り系のサブコマンドだけを許可するホワイトリストを実装していますが、対象の環境で実行される点に注意してください。`infra_monitor/tools.py`のkubectlラッパーはダミーデータを返す実装で、実際のクラスタには接続しません。

@@ -1,5 +1,5 @@
-# samples/chapter06/mcp_cloudsql.py
-"""Cloud SQL MCPサーバー（MCP Toolbox）とADKの統合例"""
+# samples/chapter06/mcp_rds.py
+"""Amazon RDS MCPサーバー（MCP Toolbox）とADKの統合例"""
 
 import os
 
@@ -8,18 +8,19 @@ from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from mcp import StdioServerParameters
 
 
-# Cloud SQL用のtools.yamlを指定してToolboxを起動
-cloudsql_server = StdioConnectionParams(
+# RDS用のtools.yamlを指定してToolboxを起動
+rds_server = StdioConnectionParams(
     server_params=StdioServerParameters(
         command="npx",
         args=[
             "-y",
             "@toolbox-sdk/server",
             "--stdio",
-            "--config", "tools-cloudsql.yaml",
+            "--config", "tools-rds.yaml",
         ],
         env={
-            "GOOGLE_CLOUD_PROJECT": os.environ.get("GCP_PROJECT_ID", "my-project"),
+            # RDSのエンドポイント（例: mydb.xxxx.ap-northeast-1.rds.amazonaws.com）
+            "DB_HOST": os.environ.get("DB_HOST", "localhost"),
             "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
         },
     )
@@ -29,7 +30,7 @@ cloudsql_server = StdioConnectionParams(
 db_agent = Agent(
     name="db_operator",
     model="bedrock/global.anthropic.claude-sonnet-5-5",
-    instruction="""あなたはCloud SQL上の業務データベースを操作するエージェントです。
+    instruction="""あなたはAmazon RDS上の業務データベースを操作するエージェントです。
 
     ## 権限
     - SELECT: 許可
@@ -42,6 +43,6 @@ db_agent = Agent(
     3. SELECTクエリは即座に実行する
     4. データ変更クエリは、実行前にSQLの内容をユーザーに提示し承認を得る""",
     tools=[
-        McpToolset(connection_params=cloudsql_server),
+        McpToolset(connection_params=rds_server),
     ],
 )

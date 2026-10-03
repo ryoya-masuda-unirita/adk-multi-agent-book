@@ -1,13 +1,13 @@
 # samples/chapter04/session_db_config.py
 """DatabaseSessionServiceの接続設定例（4-2-2節）
 
-環境変数によるdb_urlの組み立てと、Cloud SQL Auth Proxy経由の接続例。
+環境変数によるdb_urlの組み立てと、Amazon RDS（PostgreSQL）への接続例。
 認証情報はコードに直書きせず、環境変数から取得する。
 
 必要な環境変数:
   DB_USER     : データベースユーザー名
   DB_PASSWORD : データベースパスワード
-  DB_HOST     : データベースホスト名（Cloud SQL Auth Proxy使用時は不要）
+  DB_HOST     : データベースホスト名（RDSの場合はエンドポイント）
   DB_NAME     : データベース名
 """
 import os
@@ -31,26 +31,27 @@ def create_database_session_service() -> DatabaseSessionService:
     )
 
 
-def create_cloud_sql_session_service() -> DatabaseSessionService:
-    """Cloud SQL Auth Proxy経由で接続するSessionServiceを生成する
+def create_rds_session_service() -> DatabaseSessionService:
+    """Amazon RDS（PostgreSQL）に接続するSessionServiceを生成する
 
-    Cloud SQL Auth Proxyはlocalhost:5432でリッスンしている前提。
-    Proxyを起動したうえで、db_urlにはlocalhostを指定するだけでよい。
+    DB_HOSTにはRDSのエンドポイント
+    （例: mydb.xxxx.ap-northeast-1.rds.amazonaws.com）を指定する。
+    ssl=requireを付けて、RDSとの通信をTLSで暗号化する。
     """
-    # Cloud SQL Auth Proxy経由での接続
+    # RDSへのTLS接続
     return DatabaseSessionService(
         db_url=f"postgresql+asyncpg://{os.environ['DB_USER']}:"
-               f"{os.environ['DB_PASSWORD']}@localhost:5432/"
-               f"{os.environ['DB_NAME']}"
+               f"{os.environ['DB_PASSWORD']}@{os.environ['DB_HOST']}:5432/"
+               f"{os.environ['DB_NAME']}?ssl=require"
     )
 
 
 if __name__ == "__main__":
     # 環境変数が揃っているかを確認する（接続自体は行わない）
-    required = ("DB_USER", "DB_PASSWORD", "DB_NAME")
+    required = ("DB_USER", "DB_PASSWORD", "DB_HOST", "DB_NAME")
     missing = [name for name in required if name not in os.environ]
     if missing:
         print(f"環境変数が未設定です: {', '.join(missing)}")
     else:
-        service = create_cloud_sql_session_service()
+        service = create_rds_session_service()
         print(f"DatabaseSessionServiceを生成しました: {type(service).__name__}")

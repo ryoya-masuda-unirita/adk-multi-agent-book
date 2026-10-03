@@ -10,7 +10,7 @@
 | `memory_agent/session_config.py` | 環境変数に応じたSessionService／MemoryServiceの生成 |
 | `memory_agent/state_keys.py` | Stateキーの定数定義と型安全なアクセサ |
 | `memory_agent/tools.py` | 商品検索・注文照会のツール関数 |
-| `session_db_config.py` | DatabaseSessionServiceの接続設定（Cloud SQL Auth Proxy経由を含む） |
+| `session_db_config.py` | DatabaseSessionServiceの接続設定（Amazon RDSへの接続を含む） |
 | `corpus_setup.py` | Vertex AI RAG Engineのコーパス作成とドキュメント取り込み |
 | `rag_corpora.py` | 複数コーパスの使い分けと検索パラメータの調整 |
 | `knowledge_memory_integration.py` | 静的知識（RAG）と動的記憶（Memory Bank）を分離して統合する構成 |
@@ -64,6 +64,6 @@ python -m pytest
 
 ## Google Cloudが必要なサンプル
 
-`corpus_setup.py`、`rag_corpora.py`、`knowledge_memory_integration.py`、`unified_context_callback.py`と、Memory Bankに接続する`adk run`はGoogle Cloudプロジェクトと課金の有効化が前提です。Vertex AI Memory BankとRAG EngineのAPIコールに課金が発生します。`session_db_config.py`をCloud SQLに向ける場合もインスタンスの費用がかかります。
+`corpus_setup.py`、`rag_corpora.py`、`knowledge_memory_integration.py`、`unified_context_callback.py`と、Memory Bankに接続する`adk run`はGoogle Cloudプロジェクトと課金の有効化が前提です。Vertex AI Memory BankとRAG EngineのAPIコールに課金が発生します。`session_db_config.py`をAmazon RDSに向ける場合は、AWS側でインスタンスの費用がかかります。
 
 `memory_agent`は`instruction=build_instruction`で動的Instructionを使うため、`adk web`ではエージェント情報の表示が失敗する場合があります。Session・State・Memory・Compactionの確認は`adk run memory_agent`を主経路にしてください。
