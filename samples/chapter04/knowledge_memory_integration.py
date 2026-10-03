@@ -44,7 +44,7 @@ policy_docs = create_kb_retrieval_tool(
                 "ポリシーや規定に関する質問に回答する際に使用してください。",
     knowledge_base_id=POLICY_KB_ID,
     number_of_results=3,
-    score_threshold=0.7,  # 規約は高精度が必須
+    score_threshold=0.6,  # 規約は高精度が必須
 )
 
 async def save_session_to_memory(callback_context: CallbackContext) -> None:

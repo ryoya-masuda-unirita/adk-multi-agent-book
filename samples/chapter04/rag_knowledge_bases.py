@@ -38,7 +38,7 @@ faq_docs = create_kb_retrieval_tool(
                 "一般的な問い合わせに対する標準的な回答を取得する際に使用してください。",
     knowledge_base_id=FAQ_KB_ID,
     number_of_results=3,
-    score_threshold=0.6,  # FAQは精度重視
+    score_threshold=0.55,  # FAQは精度重視
 )
 
 # ポリシー・規約用のRAGツール
@@ -48,7 +48,7 @@ policy_docs = create_kb_retrieval_tool(
                 "ポリシーや法的な質問に回答する際に使用してください。",
     knowledge_base_id=POLICY_KB_ID,
     number_of_results=3,
-    score_threshold=0.7,  # 規約は高精度が必須
+    score_threshold=0.6,  # 規約は高精度が必須
 )
 
 # エージェントに3つのRAGツールを装備

@@ -23,7 +23,9 @@ def create_kb_retrieval_tool(
         description: ツールの説明（エージェントがツールを選ぶ判断材料）
         knowledge_base_id: 検索対象のKnowledge BaseのID
         number_of_results: 取得する検索結果の最大件数
-        score_threshold: この関連度スコア（0〜1、高いほど関連が強い）未満の結果を除外する
+        score_threshold: この関連度スコア（0〜1、高いほど関連が強い）未満の結果を除外する。
+            スコアの出方は埋め込みモデルや文書によって変わるため、実際のデータで調整する
+            （Titan Text Embeddings V2では、関連する文書が0.65〜0.75、関連の薄い文書が0.55前後だった）
         region_name: Knowledge Baseのリージョン（省略時はAWSプロファイルの設定）
     """
 
