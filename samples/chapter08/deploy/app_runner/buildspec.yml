@@ -1,0 +1,16 @@
+# samples/chapter08/deploy/app_runner/buildspec.yml
+# AWS CodeBuild用のビルド手順（コンテナイメージをビルドしてAmazon ECRにプッシュする）
+# REGISTRY と IMAGE は、CodeBuildプロジェクトの環境変数として渡す
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin "${REGISTRY}"
+  build:
+    commands:
+      # App Runnerはx86_64（amd64）のイメージを実行する
+      - docker build --platform linux/amd64 -t "${IMAGE}" .
+  post_build:
+    commands:
+      - docker push "${IMAGE}"

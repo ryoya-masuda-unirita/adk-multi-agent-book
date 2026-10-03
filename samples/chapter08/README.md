@@ -13,7 +13,8 @@
 | `deploy/app_runner/agent.py` | App Runnerデプロイ用のエージェント定義（`app.py`が読み込む） |
 | `deploy/app_runner/app.py` | ADKエージェントをFastAPIでラップしたHTTPサーバー |
 | `deploy/app_runner/Dockerfile` | App Runner用のコンテナ定義 |
-| `deploy/app_runner/deploy_app_runner.sh` | App Runnerへのデプロイスクリプト |
+| `deploy/app_runner/buildspec.yml` | AWS CodeBuild用のビルド手順（コンテナイメージをビルドしてECRにプッシュ） |
+| `deploy/app_runner/deploy_app_runner.sh` | App Runnerへのデプロイスクリプト（CodeBuildでビルドしてからサービスを作成） |
 | `deploy/eks/deployment.yaml` | EKS用マニフェスト（ServiceAccount + Deployment + Service + HPA） |
 | `deploy/session_migrator.py` | Agent Engine（VertexAiSessionService）から外部DBへのセッション移行 |
 | `monitoring/dashboard.json` | CloudWatchダッシュボードの宣言的定義 |
@@ -61,7 +62,28 @@ cd samples/chapter08/deploy
 bash deploy.sh
 ```
 
-App Runnerにデプロイする場合は`deploy/app_runner/deploy_app_runner.sh`を使います。EKSの場合はAWSアカウントIDを置換してマニフェストを適用します。
+App Runnerにデプロイする場合は`deploy/app_runner/deploy_app_runner.sh`を使います。コンテナイメージはAWS CodeBuildでビルドするため、手元のPCにDockerは要りません。手元から送るのはソースのzip（数KB）だけで、ビルドとECRへのプッシュはAWSの中で行われます。
+
+```bash
+export DATABASE_URL="postgresql+asyncpg://user:pass@host/db"
+export CODE_BUCKET=your-code-bucket
+export CODEBUILD_ROLE_ARN=arn:aws:iam::123456789012:role/your-codebuild-role
+export APP_RUNNER_ACCESS_ROLE_ARN=arn:aws:iam::123456789012:role/your-apprunner-ecr-access-role
+export APP_RUNNER_INSTANCE_ROLE_ARN=arn:aws:iam::123456789012:role/your-apprunner-instance-role
+
+cd samples/chapter08/deploy/app_runner
+bash deploy_app_runner.sh
+```
+
+必要なIAMロールは3つです。
+
+| ロール | 引き受けるサービス | 許可する操作 |
+|---|---|---|
+| CodeBuildのサービスロール | `codebuild.amazonaws.com` | S3からソースを読む、ECRにイメージをプッシュする、CloudWatch Logsにログを書く |
+| アクセスロール | `build.apprunner.amazonaws.com` | ECRからイメージを取得する（AWS管理ポリシー`AWSAppRunnerServicePolicyForECRAccess`） |
+| インスタンスロール | `tasks.apprunner.amazonaws.com` | Amazon Bedrockのモデルを呼び出す |
+
+EKSの場合は、同じ方法でビルドしたECRのイメージを使い、AWSアカウントIDを置換してマニフェストを適用します。
 
 ```bash
 cd samples/chapter08/deploy/eks
@@ -94,7 +116,7 @@ python test_alert.py           # 意図的にエラーを発生させてアラ�
 
 ## AWSのリソースが必要なサンプル
 
-この章のサンプルは`support_agent`のローカル実行を除き、すべてAWSのリソースが前提です。認証はBedrockと同じAWSプロファイルを使います。AgentCore Runtimeの実行、App Runner／EKSの実行、CloudWatchのダッシュボードとアラーム、CloudWatch LogsとX-Rayの参照で課金が発生します。
+この章のサンプルは`support_agent`のローカル実行を除き、すべてAWSのリソースが前提です。認証はBedrockと同じAWSプロファイルを使います。AgentCore Runtimeの実行、CodeBuildのビルド、App Runner／EKSの実行、CloudWatchのダッシュボードとアラーム、CloudWatch LogsとX-Rayの参照で課金が発生します。
 
 AgentCore Runtimeは呼び出して実行した分に課金されますが、App RunnerのサービスとEKSのクラスターは動かしていなくても費用がかかります。ハンズオンを終えたら削除してください。`deploy/app_runner/app.py`はDatabaseSessionServiceを使うため、`DATABASE_URL`にAmazon RDS等の接続文字列を設定する必要があります。
 

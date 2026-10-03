@@ -143,7 +143,7 @@ aws sts get-caller-identity --profile oic
 | 第5章 | Amazon Bedrock Guardrails、Amazon DynamoDB（いずれも発展サンプルのみ） |
 | 第6章 | Amazon Athena、Amazon RDS、Amazon Aurora、Amazon DynamoDB（MCPサーバー接続時） |
 | 第7章 | Amazon Cognito（`auth/oauth2_server.py`のみ） |
-| 第8章 | Amazon Bedrock AgentCore Runtime、AWS App Runner／Amazon EKS、Amazon CloudWatch、AWS X-Ray |
+| 第8章 | Amazon Bedrock AgentCore Runtime、AWS CodeBuild、AWS App Runner／Amazon EKS、Amazon CloudWatch、AWS X-Ray |
 | 第10章 | Amazon CloudWatch Logs、AWS Secrets Manager |
 
 実行にかかる費用はモデル呼び出し回数とAWSのサービスの利用量に応じて変わります。課金状況はAWSマネジメントコンソールの「請求とコスト管理」で確認してください。RDS・Aurora・App Runner・EKSは、動かしていなくても置いておくだけで費用がかかります。試したら削除してください。

@@ -21,7 +21,7 @@
 | 1 | Secret Manager → Secrets Manager、セッション保存と Cloud SQL → RDS | 4, 6, 10 | 済み（ローカルで確認） |
 | 2 | Firestore → DynamoDB、Spanner → Aurora、BigQuery → Athena | 2, 5, 6 | 済み（DynamoDB と Aurora はローカル、Athena は本物で確認） |
 | 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | 済み（どちらも本物で確認） |
-| 4 | デプロイ（Agent Engine → AgentCore Runtime、Cloud Run → App Runner、GKE → EKS）と監視（Cloud Logging → CloudWatch） | 8, 10 | 済み。AgentCore Runtime と監視は本物で確認。App Runner と EKS は本物では未確認（下の「残っているもの」を参照） |
+| 4 | デプロイ（Agent Engine → AgentCore Runtime、Cloud Run → App Runner、GKE → EKS）と監視（Cloud Logging → CloudWatch） | 8, 10 | 済み。AgentCore Runtime、監視、App Runner は本物で確認。EKS は本物では未確認（下の「残っているもの」を参照） |
 | 追加 | 6章の `gcloud` コマンド例 → `aws` コマンド | 6 | 済み（読み取りだけのコマンドを本物で確認） |
 | 追加 | 7章の A2A サーバーのトークン検証：Google の ID トークン → Amazon Cognito | 7 | 済み（本物の Cognito が発行したトークンで確認。正しいトークンは通り、改ざん・別クライアント・権限不足は拒否された） |
 | 追加 | 5章の個人情報ガードレール：Cloud DLP → Bedrock Guardrails | 5 | 済み（本物で確認。日本語の文で電話番号・メール・カード番号・マイナンバー・旅券番号を隠せた） |
@@ -41,7 +41,7 @@
 
 | 対象 | 章 | 確認できたこと | 確認できていないこと |
 |---|---|---|---|
-| App Runner へのデプロイ（`deploy/app_runner/`） | 8 | コンテナをこのPCで動かし、Bedrock と PostgreSQL につないで会話できた | App Runner のサービス作成。このPCからコンテナ置き場（ECR）への大きなアップロードが途中で切れて、イメージを送れなかった |
+| App Runner 上での会話（`deploy/app_runner/`） | 8 | デプロイ用スクリプトを通しで実行でき、App Runner 上でサービスが起動して `/health` が応答した。会話は、同じコンテナをこのPCで動かして確認した | App Runner 上での会話。会話の保存先の DB（RDS）を用意していないため |
 | EKS 用マニフェスト（`deploy/eks/deployment.yaml`） | 8 | YAML として正しく読める | クラスターへの適用。EKS のクラスターを作っていない（作成に時間と費用がかかるため） |
 | RDS、Secrets Manager、DynamoDB、Aurora | 4, 5, 6, 10 | ローカルの代用品では動いた | 本物への接続 |
 
@@ -67,7 +67,7 @@
 | `deploy/deploy_sdk.py`、`deploy/deploy.sh` を AgentCore Runtime 向けに書き換える | 済み（本物で確認。デプロイ、一覧、更新、削除が動いた） |
 | `query_with_retry.py`、`test_alert.py` を AgentCore Runtime の呼び出しに書き換える | 済み（本物で確認。混雑時や障害時のリトライだけは、その状況を起こせないので未確認） |
 | `monitoring/` 以下を CloudWatch 向けに書き換える | 済み（本物で確認。エラーを発生させると、エラー率のアラームが約40秒で発火した） |
-| `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（`deploy/app_runner/`、`deploy/eks/`）に書き換える | 済み（コンテナはローカルで確認。App Runner と EKS への実デプロイは未確認） |
+| `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（`deploy/app_runner/`、`deploy/eks/`）に書き換える | 済み（App Runner は本物でデプロイまで確認。EKS への実デプロイは未確認） |
 | README、`requirements.txt`、`.env.example` を直す | 済み |
 
 監視について分かったこと。
@@ -80,8 +80,9 @@
 コンテナのアップロードについて分かったこと。
 
 - **このPCから ECR への大きなアップロードが通らない。**約370MBの層が、`docker push` でも AWS の API を直接使う方法でも、途中でタイムアウトした。小さな層は送れた。S3 への65MBのアップロードは問題なかったので、ECR 向けの通信だけの問題と見られる。原因（社内ネットワークの制限か、回線の問題か）は調べていない。
+- **コンテナのビルドは CodeBuild で行う運用にした。**（2026-10-04 に決定）CodeBuild は、AWS の中でビルドをしてくれるサービス。手元から送るのはソースの zip（数KB）だけで、ビルドと ECR への送信は AWS の中で行われるので、上の問題を避けられる。手元のPCに Docker も要らなくなる。ビルドは約80秒、App Runner のサービス起動は約4分だった。手順は `samples/chapter08/deploy/app_runner/buildspec.yml` と `deploy_app_runner.sh` にある。
 
-確認のために作った AWS のリソース（ランタイム、IAM ロール、S3 バケット、ECR リポジトリ、アラーム、ダッシュボード、SNS トピック）は、すべて削除済み。
+確認のために作った AWS のリソース（ランタイム、App Runner のサービス、CodeBuild のプロジェクト、IAM ロール、S3 バケット、ECR リポジトリ、アラーム、ダッシュボード、SNS トピック）は、すべて削除済み。
 
 ## 段階2で決めたこと
 
