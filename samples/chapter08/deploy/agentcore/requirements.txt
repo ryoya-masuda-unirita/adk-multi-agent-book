@@ -1,0 +1,8 @@
+# samples/chapter08/deploy/agentcore/requirements.txt
+# AgentCore Runtimeにデプロイするパッケージの依存
+google-adk==2.2.0
+# Amazon Bedrock（Claude）をLiteLLM経由で呼ぶための依存。範囲はgoogle-adk[extensions]の指定に合わせる
+litellm>=1.83.7,<=1.83.14
+boto3>=1.40.0
+# AgentCore RuntimeのHTTPサーバー（/invocations と /ping）を提供する
+bedrock-agentcore>=1.0.0

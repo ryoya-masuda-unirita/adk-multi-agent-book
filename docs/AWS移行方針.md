@@ -46,6 +46,26 @@
 1. **Agent Engine の置き換え先。**AgentCore Runtime にすると決めた（2026-10-04）。うまくいかない点が出たら、その時点で見直す。
 2. **IAM ロールをどう作るか。**ロールは作ってよいと決めた（2026-10-04）。`.claude/settings.local.json` に `aws iam create-role` などの許可を入れたので、Claude Code から作成と削除ができる。
 
+### 8章の進み具合（作業中）
+
+小さく試した結果、AgentCore Runtime で進められると分かった（2026-10-04）。
+
+- **ADK のエージェントがそのまま載った。**`support_agent`（振り分け役と専門役のマルチエージェント）を載せて呼び出すと、正しく答えが返った。同じセッション内では前の質問も覚えていた。
+- **コンテナではなく、コードを zip で渡す方式にする。**AgentCore Runtime のコンテナは ARM64 用が必要だが、このPC（WSL2）では作れなかった。zip 方式なら、依存パッケージを ARM64 向けに取得して固めるだけで済む（`uv pip install --python-platform aarch64-manylinux_2_28`）。zip は約65MB。
+- **エントリポイントは `samples/chapter08/deploy/agentcore/main.py`。**作成済み。
+- **監視に使える情報は自動で出る。**CloudWatch の `AWS/Bedrock-AgentCore` に、呼び出し回数（Invocations）、応答時間（Latency）、エラー数（UserErrors、SystemErrors）などが出る。アプリが標準出力に書いたログは、ロググループ `/aws/bedrock-agentcore/runtimes/<ランタイムID>-DEFAULT` に入る。
+- **エラーの出方。**不正なリクエストは `RuntimeClientError`、存在しないランタイムは `ResourceNotFoundException` になる。セッションIDは33文字以上が必要。
+
+残りの作業は次のとおり。
+
+1. `deploy/deploy_sdk.py` と `deploy/deploy.sh` を AgentCore Runtime 向けに書き換える
+2. `query_with_retry.py` と `test_alert.py` を AgentCore Runtime の呼び出しに書き換える
+3. `monitoring/` 以下を CloudWatch 向けに書き換える
+4. `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（App Runner など、EKS）に書き換える
+5. README、`requirements.txt`、`.env.example` を直す
+
+確認のために残してある AWS のリソース（8章の確認が終わったら消す）：IAM ロール `adk-book-agentcore-role`、S3 バケット `adk-book-agentcore-code-<アカウント番号>`。
+
 ## 段階2で決めたこと
 
 - **6章の DynamoDB と Athena は、AWS Labs の MCP サーバーを使う。**元のサンプルが使っていた MCP Toolbox は、DynamoDB と Athena に対応していないため。起動には `uv`（`uvx` コマンド）が要る。
