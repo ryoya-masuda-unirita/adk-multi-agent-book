@@ -23,6 +23,7 @@
 | 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | コードは済み。AgentCore Memory は本物で確認済み。Knowledge Bases は本物では未確認 |
 | 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 10 | 10章の監査ログだけ済み（本物の CloudWatch Logs で確認）。8章は未着手 |
 | 追加 | 6章の `gcloud` コマンド例 → `aws` コマンド | 6 | 済み（読み取りだけのコマンドを本物で確認） |
+| 追加 | 5章の個人情報ガードレール：Cloud DLP → Bedrock Guardrails | 5 | 済み（本物で確認。日本語の文で電話番号・メール・カード番号・マイナンバー・旅券番号を隠せた） |
 
 確認の内容は次のとおり。
 
@@ -39,7 +40,6 @@
 |---|---|---|
 | デプロイと監視の全体 | 8 | 決めることが2つある。下の「8章で決めること」を参照 |
 | Knowledge Bases の本物での確認 | 4 | IAM ロールの作成が要る |
-| Cloud DLP を使う個人情報のガードレール（`guardrails/dlp_guardrail.py`） | 5 | 最初の洗い出しで漏れていた。置き換え先の候補（Bedrock Guardrails、Amazon Comprehend）が日本語の個人情報をどこまで検出できるかが未確認 |
 | Google の ID トークンを検証する A2A サーバー（`auth/oauth2_server.py`） | 7 | 最初の洗い出しで漏れていた。置き換えるなら Amazon Cognito になるが、検証の作りが変わる |
 
 ### 8章で決めること

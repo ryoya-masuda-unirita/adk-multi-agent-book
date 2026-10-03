@@ -15,7 +15,7 @@
 | `guardrails/layered_guardrails.py` | 複数ガードレールを重ねるレイヤード構成 |
 | `guardrails/context_aware_guardrails.py` | Stateに応じて判定を変えるコンテキスト依存ガードレール |
 | `guardrails/soft_block.py` | 拒否せず代替案を返すソフトブロック |
-| `guardrails/dlp_guardrail.py` | Cloud DLP APIを使った機密情報検出（発展） |
+| `guardrails/dlp_guardrail.py` | Amazon Bedrock Guardrailsを使った機密情報検出（発展） |
 | `guardrails/agent.py` | ガードレールを適用したエージェント定義 |
 | `hitl/approval_flow.py` | ApprovalManagerによる同期承認フロー |
 | `hitl/async_approval.py` | DynamoDBを使った非同期承認フロー（発展） |
@@ -39,7 +39,7 @@ cd expense_agent
 cp .env.example .env
 ```
 
-`requirements.txt`はADKの`eval` extraとpytestを含みます。`google-cloud-dlp`は発展サンプル（`guardrails/dlp_guardrail.py`）を動かす場合にだけ必要です。`hitl/async_approval.py`と`hitl/dashboard_data.py`はBedrockと同じ`boto3`でDynamoDBを使います。
+`requirements.txt`はADKの`eval` extraとpytestを含みます。発展サンプルの`guardrails/dlp_guardrail.py`（Bedrock Guardrails）と、`hitl/async_approval.py`・`hitl/dashboard_data.py`（DynamoDB）は、Bedrockと同じ`boto3`を使います。
 
 ## 実行
 
@@ -69,6 +69,6 @@ pytest tests/test_guardrails.py -v
 
 `guardrails/`と`hitl/`はどちらも`root_agent`を公開しているため、単体で`adk run guardrails`／`adk run hitl`としても動かせます。
 
-## Google Cloudが必要なサンプル
+## AWSのリソースが必要なサンプル
 
-`guardrails/dlp_guardrail.py`はCloud DLP APIと環境変数`GOOGLE_CLOUD_PROJECT`が必要です。Google Cloudプロジェクトと課金の有効化が前提です。`hitl/async_approval.py`と`hitl/dashboard_data.py`はDynamoDBを使い、パーティションキーが`request_id`（文字列）のテーブル`approval_requests`が必要です。それ以外のサンプルはAPIキーだけで動きます。
+`guardrails/dlp_guardrail.py`はBedrock Guardrailsを使います。同じファイルの`create_pii_guardrail()`でガードレールを作成し、表示されたIDを環境変数`BEDROCK_GUARDRAIL_ID`に設定してください。`hitl/async_approval.py`と`hitl/dashboard_data.py`はDynamoDBを使い、パーティションキーが`request_id`（文字列）のテーブル`approval_requests`が必要です。それ以外のサンプルはAPIキーだけで動きます。
