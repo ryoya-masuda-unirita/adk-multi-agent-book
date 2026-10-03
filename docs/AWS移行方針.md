@@ -1,0 +1,69 @@
+# AWS移行方針
+
+このリポジトリのサンプルを、Google Cloud から AWS に置き換えていくための方針と進み具合をまとめる。
+
+最終更新：2026-10-04
+
+## ルール
+
+1. **AWS の操作は `oic` プロファイルで行う。**ほかのプロファイルやアカウントは使わない。
+2. **確認が済んだらすぐ消す。**動作確認のために作った AWS のリソース（DB、デプロイしたアプリなど）は、確認が終わったその場で削除する。置いておくだけで料金がかかるものがあるため。
+3. **段階ごとに区切る。**1つの段階を終えて動作を確かめてから、次の段階に進む。
+4. **Google 版は置き換える。**並べて残さない。元のコードは本家リポジトリ（`upstream`）にある。
+5. **作るリソースには `adk-book-` で始まる名前を付ける。**`oic` はほぼ何でも操作できるため、同じアカウントにある別のものと区別し、誤って触らないようにする。
+6. **リージョンは東京に限らない。**`oic` の既定は東京（`ap-northeast-1`）のままにし、東京で使えないサービスだけ、そのコードの中で別のリージョンを指定する。
+
+## 進み具合
+
+| 段階 | 内容 | 章 | 状態 |
+|---|---|---|---|
+| 0 | モデルを Gemini から Bedrock の Claude に変更 | 全章 | 済み |
+| 1 | Secret Manager → Secrets Manager、セッション保存と Cloud SQL → RDS | 4, 6, 10 | 済み（ローカルで確認） |
+| 2 | Firestore → DynamoDB、Spanner → Aurora、BigQuery → Athena | 2, 5, 6 | 済み（DynamoDB と Aurora はローカル、Athena は本物で確認） |
+| 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | 未着手 |
+| 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 9, 10 | 未着手 |
+
+確認の内容は次のとおり。
+
+- **段階1**：Docker で立てた PostgreSQL と、偽の AWS サーバー（moto）で確認した。本物の RDS と Secrets Manager にはまだつないでいない。
+- **段階2の DynamoDB と Aurora**：Docker で立てた DynamoDB Local と PostgreSQL で確認した。本物にはまだつないでいない。
+- **段階2の Athena**：`oic` で本物の Athena に確認用のデータを置いて確認した。6章の分析エージェントは、Bedrock の Claude に質問して Athena から答えを得るところまで動いた。確認用のリソースは削除済み。
+
+## 段階2で決めたこと
+
+- **6章の DynamoDB と Athena は、AWS Labs の MCP サーバーを使う。**元のサンプルが使っていた MCP Toolbox は、DynamoDB と Athena に対応していないため。起動には `uv`（`uvx` コマンド）が要る。
+- **DynamoDB の MCP サーバーは 1.0.9 に固定する。**2.x 系はデータ設計の支援専用になり、読み書きのツールが無くなったため。
+- **Aurora と RDS は、引き続き MCP Toolbox を使う。**中身が PostgreSQL なので、そのまま接続できる。
+- **Athena はワークグループを指定して使う。**クエリ結果の保存先（S3）をワークグループに設定しておき、環境変数 `ATHENA_WORKGROUP` で渡す。
+
+## 段階ごとの見通しと確認方法
+
+| 段階 | 見通し | ローカルで確認できるもの | 本物の AWS が必要なもの |
+|---|---|---|---|
+| 3 | 一番不確か。ADK とつなぐ部品の自作が未検証 | なし | Knowledge Bases、AgentCore Memory |
+| 4 | たぶんいける。8章の書き直しの量が多い（20ファイル前後） | なし | App Runner、CloudWatch |
+
+段階3は、書き換える前にまず小さく試す。たとえば AgentCore Memory に1件だけ保存して読み出せるかを確かめ、だめなら Google のまま残すと決める。
+
+## 権限
+
+`oic` は IAM ユーザーで、必要な権限はすでにそろっている（2026-10-04 に確認）。追加で付けるものは無い。
+
+- `PowerUserAccess`：IAM 以外のほぼ全サービスを使える。DynamoDB、RDS、Athena、S3、App Runner、ECR、CloudWatch、Secrets Manager、Bedrock がこれで通る。
+- `IAMFullAccess`：IAM を操作できる。デプロイ用のロール（アプリ自身に持たせる権限）を作れる。
+
+会社の AWS 全体に掛かる制限（SCP）はユーザー側から見えない。あれば、実際に操作したときに拒否されて初めて分かる。
+
+## 注意点
+
+- **8章は丸ごと AWS に移す。**Google の Cloud Run から AWS の RDS や Bedrock を呼ぶ形にすると、接続も認証も通らない。中途半端に混ぜない。
+- **料金がかかるもの。**Aurora、Knowledge Bases（裏で検索用の DB が動く）、App Runner は、置いておくだけで課金される。ルール2を守る。
+- **東京以外に作ったものは消し忘れやすい。**別のリージョンのリソースは、東京の画面には出てこない。消すときは、作ったリージョンを見て消す。
+- **AgentCore が使えるリージョンは未確認。**東京で使えなければ、米国のリージョンで試す（ルール6）。
+- **RAG と Memory Bank は、ADK 用の部品が AWS 側に無い。**つなぎのコードを自作する。
+
+## 変えないもの
+
+- `google_search` と `BuiltInCodeExecutor` を使うエージェント（2章、9章）。Gemini 専用の機能のため。
+- Google カレンダーの OAuth のサンプル（2章）。Google のサービス自体を使う例のため。
+- `samples/chapter08/deploy/session_migrator.py`。Agent Engine からセッションを引っ越すための道具のため。

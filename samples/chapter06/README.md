@@ -1,6 +1,6 @@
 # 第6章 MCP & ツール統合
 
-外部システムをエージェントのツールとして取り込むサンプルです。MCP（Model Context Protocol）サーバーへのstdio接続とStreamable HTTP接続、MCP Toolbox経由でのBigQuery／Amazon RDS／Aurora統合、AWS LabsのMCPサーバー経由でのDynamoDB統合、CLIコマンドのラッパー化を収録しています。ハンズオンの成果物は`infra_monitor/`で、BigQuery MCPサーバー（ログ分析）とkubectlラッパー（Kubernetes状態確認）を組み合わせたインフラ監視エージェントです。
+外部システムをエージェントのツールとして取り込むサンプルです。MCP（Model Context Protocol）サーバーへのstdio接続とStreamable HTTP接続、MCP Toolbox経由でのAmazon RDS／Aurora統合、AWS LabsのMCPサーバー経由でのAthena／DynamoDB統合、CLIコマンドのラッパー化を収録しています。ハンズオンの成果物は`infra_monitor/`で、Athena MCPサーバー（ログ分析）とkubectlラッパー（Kubernetes状態確認）を組み合わせたインフラ監視エージェントです。
 
 ## 収録内容
 
@@ -14,7 +14,7 @@
 | `mcp_tool_filter_callback.py` | コールバック関数による動的フィルタリング（書き込み系の除外） |
 | `mcp_lifecycle.py` | Runnerによる接続ライフサイクルの自動管理 |
 | `mcp_error_handling.py` | MCPツール呼び出しのエラーハンドリング |
-| `mcp_bigquery.py`／`tools.yaml` | BigQuery MCPサーバー（MCP Toolbox）との統合 |
+| `mcp_athena.py` | Athena MCPサーバー（AWS Labs）との統合 |
 | `mcp_rds.py`／`tools-rds.yaml` | Amazon RDS（PostgreSQL）MCPサーバーとの統合 |
 | `mcp_aurora.py`／`tools-aurora.yaml` | Amazon Aurora（PostgreSQL互換）MCPサーバーとの統合 |
 | `mcp_dynamodb.py` | DynamoDB MCPサーバー（AWS Labs）との統合 |
@@ -39,35 +39,34 @@ cd infra_monitor
 cp .env.example .env
 ```
 
-MCP Toolboxの起動にはNode.js v18以上が必要です。`node --version`で確認してください。
+MCP Toolboxの起動にはNode.js v18以上が必要です。`node --version`で確認してください。AWS LabsのMCPサーバー（Athena／DynamoDB）は`uvx`で起動するため、`uv`のインストールも必要です。
 
 ## 実行
 
-BigQuery MCPを無効にしたまま、kubectlラッパー（ダミーデータ）だけで起動できます。この構成ならGoogle Cloudプロジェクトは不要です。
+Athena MCPを無効にしたまま、kubectlラッパー（ダミーデータ）だけで起動できます。この構成ならAthenaの準備は不要です。
 
 ```bash
 cd samples/chapter06
-export ENABLE_BIGQUERY_MCP=0
+export ENABLE_ATHENA_MCP=0
 adk run infra_monitor
 ```
 
-BigQuery MCPサーバーにも接続する場合は、ADCの設定とプロジェクトIDの指定を加えます。
+Athena MCPサーバーにも接続する場合は、ワークグループの指定を加えます。ワークグループには、クエリ結果の保存先（S3）を設定しておきます。
 
 ```bash
-gcloud auth application-default login
-export GCP_PROJECT_ID="your-project-id"
-export ENABLE_BIGQUERY_MCP=1
+export ATHENA_WORKGROUP="your-workgroup"
+export ENABLE_ATHENA_MCP=1
 adk run infra_monitor
 ```
 
 ブラウザで確認する場合は`adk web .`を実行し、http://localhost:8000 でエージェント一覧から`infra_monitor`を選びます。
 
-## Google Cloudが必要なサンプル
+## AWSのリソースが必要なサンプル
 
-`mcp_bigquery.py`、および`ENABLE_BIGQUERY_MCP=1`での`infra_monitor`は、Google Cloudプロジェクトと該当サービスの有効化が前提です。クエリの実行に応じて課金が発生します。
+`mcp_athena.py`、および`ENABLE_ATHENA_MCP=1`での`infra_monitor`は、Athenaのデータベースと、クエリ結果の保存先（S3）を設定したワークグループが前提です。ワークグループは環境変数`ATHENA_WORKGROUP`で指定します。スキャンしたデータ量に応じて課金が発生します。
 
 `mcp_rds.py`はAmazon RDS（PostgreSQL）に、`mcp_aurora.py`はAmazon Aurora（PostgreSQL互換）に接続します。環境変数`DB_HOST`（RDSやAuroraのエンドポイント）と`DB_PASSWORD`を設定してください。`DB_HOST`を省略するとlocalhostに接続するため、ローカルのPostgreSQLでも試せます。
 
-`mcp_dynamodb.py`はAWS LabsのDynamoDB MCPサーバーを`uvx`で起動します（`uv`のインストールが必要です）。認証はBedrockと同じAWSプロファイルを使います。
+`mcp_dynamodb.py`はAWS LabsのDynamoDB MCPサーバーを`uvx`で起動します。AthenaとDynamoDBの認証は、Bedrockと同じAWSプロファイルを使います。
 
 CLIラッパーのサンプルは実際に`gcloud`／`kubectl`／`terraform`を呼び出します。読み取り系のサブコマンドだけを許可するホワイトリストを実装していますが、対象の環境で実行される点に注意してください。`infra_monitor/tools.py`のkubectlラッパーはダミーデータを返す実装で、実際のクラスタには接続しません。

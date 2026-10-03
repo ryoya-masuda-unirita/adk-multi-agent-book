@@ -2,12 +2,11 @@
 """ツールカタログの定義例"""
 
 TOOL_CATALOG = {
-    "bigquery": {
+    "athena": {
         "type": "mcp",
-        "package": "@toolbox-sdk/server",
-        "config": "tools.yaml",
-        "description": "BigQueryへのクエリ実行・スキーマ参照",
-        "required_iam_roles": ["roles/bigquery.dataViewer"],
+        "package": "awslabs.aws-dataprocessing-mcp-server",
+        "description": "Athenaへのクエリ実行・スキーマ参照",
+        "required_iam_roles": ["AmazonAthenaFullAccess"],
         "risk_level": "medium",  # データ参照可能
         "approval_required": False,
     },

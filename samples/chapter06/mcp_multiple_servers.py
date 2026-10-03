@@ -29,16 +29,16 @@ github_server = StdioConnectionParams(
     )
 )
 
-# BigQuery MCPサーバー（リモート）
-bigquery_headers = (
-    {"Authorization": f"Bearer {os.environ['BQ_MCP_TOKEN']}"}
-    if os.environ.get("BQ_MCP_TOKEN")
+# Athena MCPサーバー（リモート）
+athena_headers = (
+    {"Authorization": f"Bearer {os.environ['ATHENA_MCP_TOKEN']}"}
+    if os.environ.get("ATHENA_MCP_TOKEN")
     else None
 )
 
-bigquery_server = StreamableHTTPConnectionParams(
-    url="https://bigquery-mcp.example.com/mcp",
-    headers=bigquery_headers,
+athena_server = StreamableHTTPConnectionParams(
+    url="https://athena-mcp.example.com/mcp",
+    headers=athena_headers,
 )
 
 # 全MCPサーバーのツールを統合したエージェント
@@ -50,7 +50,7 @@ multi_tool_agent = Agent(
     利用可能なツール:
     - fs_*: ファイルの読み書き、ディレクトリの一覧表示
     - github_*: リポジトリの参照、Issue/PRの作成・更新
-    - bq_*: データ分析用のSQLクエリ実行
+    - athena_*: データ分析用のSQLクエリ実行
 
     タスクに合ったツールを選択してください。
     データの変更を伴う操作は、実行前にユーザーに確認を取ってください。""",
@@ -58,9 +58,9 @@ multi_tool_agent = Agent(
         McpToolset(connection_params=filesystem_server, tool_name_prefix="fs"),
         McpToolset(connection_params=github_server, tool_name_prefix="github"),
         McpToolset(
-            connection_params=bigquery_server,
+            connection_params=athena_server,
             tool_filter=["execute_query", "list_tables", "get_schema"],
-            tool_name_prefix="bq",
+            tool_name_prefix="athena",
         ),
     ],
 )

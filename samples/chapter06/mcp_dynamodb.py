@@ -16,7 +16,8 @@ dynamodb_server = StdioConnectionParams(
         args=["awslabs.dynamodb-mcp-server==1.0.9"],
         # AWS_PROFILE / AWS_REGION などの認証設定をMCPサーバーに引き継ぐ
         env={k: v for k, v in os.environ.items() if k.startswith("AWS_")},
-    )
+    ),
+    timeout=60,  # 初回はパッケージの取得に時間がかかるため長めにする
 )
 
 # ドキュメント管理エージェント

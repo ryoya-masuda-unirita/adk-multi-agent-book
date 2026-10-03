@@ -25,7 +25,7 @@ ADKの構成要素を機能ごとに分けて収録しています。オーケ�
 | `tools/tool_best_practices.py` | ツール設計のベストプラクティス |
 | `auth/api_key_auth.py` | APIキー認証 |
 | `auth/oauth2_calendar.py` | OAuth 2.0認証（Google Calendar） |
-| `auth/service_account_bigquery.py` | Service Account認証（ADC経由） |
+| `auth/iam_role_athena.py` | IAMロール認証（boto3の標準認証チェーン経由） |
 | `auth/auth_provider_registry_example.py` | AuthProviderRegistryによるプラグイン認証（experimental API） |
 | `auth/secure_tool_wrapper.py` | 認証チェック付きツールラッパー（複数ツールでの認証共通化） |
 | `debugging/debug_callbacks.py` | コールバックによるログ挿入 |
@@ -43,7 +43,7 @@ cd travel_planner
 cp .env.example .env
 ```
 
-`tools/mcp_toolset_example.py`がMcpToolsetを使うため、この章の`requirements.txt`はADKの`mcp` extraを指定しています。`auth/service_account_bigquery.py`は`google-cloud-bigquery`を使います。
+`tools/mcp_toolset_example.py`がMcpToolsetを使うため、この章の`requirements.txt`はADKの`mcp` extraを指定しています。`auth/iam_role_athena.py`はBedrockと同じ`boto3`でAthenaを使います。
 
 ## 実行
 
@@ -65,6 +65,6 @@ python orchestration/sequential_pipeline.py
 
 ## 注意事項
 
-`auth/service_account_bigquery.py`はGoogle CloudのADC（Application Default Credentials）を使います。ローカルで試す場合は`gcloud auth application-default login`を先に実行してください。`auth/oauth2_calendar.py`は環境変数`OAUTH_CLIENT_ID`と`OAUTH_CLIENT_SECRET`が必要です。
+`auth/iam_role_athena.py`はboto3の標準認証チェーンを使います。ローカルで試す場合は、Bedrockと同じAWSプロファイル（`AWS_PROFILE`）に加えて、環境変数`ATHENA_DATABASE`と、クエリ結果の保存先（S3）を設定したワークグループ（`ATHENA_WORKGROUP`）が必要です。`auth/oauth2_calendar.py`は環境変数`OAUTH_CLIENT_ID`と`OAUTH_CLIENT_SECRET`が必要です。
 
 検索ツールは全てダミー実装で、固定のデータを返します。実運用ではGoogle Places APIやMaps API等の呼び出しに差し替えます。
