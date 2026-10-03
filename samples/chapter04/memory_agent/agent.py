@@ -7,10 +7,10 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.apps.app import App, EventsCompactionConfig
 from google.adk.apps.llm_event_summarizer import LlmEventSummarizer
 from google.adk.models.lite_llm import LiteLlm
-from google.adk.tools.retrieval import VertexAiRagRetrieval
 from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 from google.adk.runners import Runner
 
+from .knowledge_base import create_kb_retrieval_tool
 from .session_config import create_session_service, create_memory_service
 from .state_keys import StateKeys, get_user_tier
 from .tools import search_products, get_order_status
@@ -45,7 +45,7 @@ def build_instruction(ctx: ReadonlyContext) -> str:
 
 ## 情報の使い分け
 - 製品の仕様に関する質問: product_docs ツールで検索してください
-- 過去の対話で学んだユーザー情報: Memory Bankから先読みされた記憶を参照してください
+- 過去の対話で学んだユーザー情報: AgentCore Memoryから先読みされた記憶を参照してください
 
 ## 記憶に関する指針
 - ユーザーの製品の使用状況、技術レベル、嗜好を覚えてください
@@ -69,19 +69,15 @@ async def save_session_to_memory(callback_context: CallbackContext) -> None:
 # --- RAG / Memory ツールの設定（環境変数で制御） ---
 tools_list = [search_products, get_order_status, PreloadMemoryTool()]
 
-rag_corpus_id = os.environ.get("RAG_CORPUS_ID")
-if rag_corpus_id:
-    product_docs = VertexAiRagRetrieval(
+knowledge_base_id = os.environ.get("KNOWLEDGE_BASE_ID")
+if knowledge_base_id:
+    product_docs = create_kb_retrieval_tool(
         name="product_docs",
         description="製品ドキュメント、仕様書、FAQを検索します。"
                     "製品についての質問に回答する際に使用してください。",
-        rag_corpora=[
-            f"projects/{os.environ.get('GCP_PROJECT', '')}"
-            f"/locations/{os.environ.get('GCP_LOCATION', 'us-central1')}"
-            f"/ragCorpora/{rag_corpus_id}"
-        ],
-        similarity_top_k=5,
-        vector_distance_threshold=0.5,
+        knowledge_base_id=knowledge_base_id,
+        number_of_results=5,
+        score_threshold=0.5,
     )
     tools_list.append(product_docs)
 

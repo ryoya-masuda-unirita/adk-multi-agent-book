@@ -5,10 +5,9 @@ from google.adk.sessions import (
     InMemorySessionService,
     DatabaseSessionService,
 )
-from google.adk.memory import (
-    InMemoryMemoryService,
-    VertexAiMemoryBankService,
-)
+from google.adk.memory import InMemoryMemoryService
+
+from .agentcore_memory import AgentCoreMemoryService
 
 
 def create_session_service():
@@ -57,20 +56,10 @@ def create_memory_service():
         # 開発時: インメモリのMemoryService
         return InMemoryMemoryService()
     else:
-        # ステージング・本番: Vertex AI Memory Bank
-        project = os.environ.get("GCP_PROJECT")
-        location = os.environ.get("GCP_LOCATION", "us-central1")
-        agent_engine_id = os.environ.get("AGENT_ENGINE_ID")
-        if not project:
+        # ステージング・本番: Amazon Bedrock AgentCore Memory
+        memory_id = os.environ.get("AGENTCORE_MEMORY_ID")
+        if not memory_id:
             raise ValueError(
-                "Memory Bank の有効化には GCP_PROJECT の設定が必要です"
+                "長期記憶の有効化には AGENTCORE_MEMORY_ID の設定が必要です"
             )
-        if not agent_engine_id:
-            raise ValueError(
-                "Memory Bank の有効化には AGENT_ENGINE_ID の設定が必要です"
-            )
-        return VertexAiMemoryBankService(
-            project=project,
-            location=location,
-            agent_engine_id=agent_engine_id,
-        )
+        return AgentCoreMemoryService(memory_id=memory_id)

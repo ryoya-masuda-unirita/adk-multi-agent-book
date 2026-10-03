@@ -64,10 +64,18 @@ class TestCreateMemoryService:
     """MemoryService生成のテスト"""
 
     def test_disabled_by_default(self, monkeypatch):
-        """デフォルトではMemory Bankが無効"""
+        """デフォルトでは長期記憶が無効"""
         monkeypatch.delenv("ENABLE_MEMORY_BANK", raising=False)
         service = create_memory_service()
         assert service is None
+
+    def test_staging_requires_memory_id(self, monkeypatch):
+        """dev以外の環境ではAGENTCORE_MEMORY_IDが必須"""
+        monkeypatch.setenv("ENABLE_MEMORY_BANK", "true")
+        monkeypatch.setenv("AGENT_ENV", "staging")
+        monkeypatch.delenv("AGENTCORE_MEMORY_ID", raising=False)
+        with pytest.raises(ValueError, match="AGENTCORE_MEMORY_ID"):
+            create_memory_service()
 
     def test_enabled_returns_service(self, monkeypatch):
         """ENABLE_MEMORY_BANK=trueでサービスが返ること"""

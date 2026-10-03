@@ -1,8 +1,8 @@
 # samples/chapter04/unified_context_callback.py
 # 4-7-2. 検索戦略の統合パターン（パターン2: コールバック統合型）完全版
-"""before_model_callbackでRAGとMemory Bankの情報を統合するサンプル
+"""before_model_callbackでRAGとAgentCore Memoryの情報を統合するサンプル
 
-Memory Bankはcallback_context.search_memory()で明示的に検索し、
+AgentCore Memoryはcallback_context.search_memory()で明示的に検索し、
 RAG側の補足情報（関連FAQ）と合わせてInstructionへ追加する。
 """
 from typing import Optional
@@ -13,7 +13,7 @@ from google.adk.models.llm_response import LlmResponse
 
 
 # 補完: 紙面では未掲載のFAQ検索スタブ。
-# 実運用ではVertex AI RAG EngineのAPI（rag.retrieval_query等）を直接呼び出して
+# 実運用ではBedrock Knowledge BasesのAPI（bedrock-agent-runtimeのretrieve）を直接呼び出して
 # 話題に関連するFAQチャンクを取得する。
 _FAQ_BY_TOPIC: dict[str, str] = {
     "返品": "Q. 返品期間は？ A. 商品到着後14日以内です。",
@@ -49,9 +49,9 @@ async def inject_unified_context(
                 if part.text
             ]
             if memory_lines:
-                sections.append("[Memory Bank]\n" + "\n".join(memory_lines))
+                sections.append("[AgentCore Memory]\n" + "\n".join(memory_lines))
 
-        # 話題に関連するFAQを事前に検索（RAG Engine APIを直接呼び出し）
+        # 話題に関連するFAQを事前に検索（Knowledge BasesのAPIを直接呼び出し）
         faq_context = await search_faq_by_topic(recent_topic)
         if faq_context:
             sections.append("[関連FAQ]\n" + faq_context)

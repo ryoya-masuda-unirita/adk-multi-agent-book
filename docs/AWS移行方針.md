@@ -20,7 +20,7 @@
 | 0 | モデルを Gemini から Bedrock の Claude に変更 | 全章 | 済み |
 | 1 | Secret Manager → Secrets Manager、セッション保存と Cloud SQL → RDS | 4, 6, 10 | 済み（ローカルで確認） |
 | 2 | Firestore → DynamoDB、Spanner → Aurora、BigQuery → Athena | 2, 5, 6 | 済み（DynamoDB と Aurora はローカル、Athena は本物で確認） |
-| 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | 未着手 |
+| 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | コードは済み。AgentCore Memory は本物で確認済み。Knowledge Bases は本物では未確認 |
 | 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 9, 10 | 未着手 |
 
 確認の内容は次のとおり。
@@ -28,6 +28,8 @@
 - **段階1**：Docker で立てた PostgreSQL と、偽の AWS サーバー（moto）で確認した。本物の RDS と Secrets Manager にはまだつないでいない。
 - **段階2の DynamoDB と Aurora**：Docker で立てた DynamoDB Local と PostgreSQL で確認した。本物にはまだつないでいない。
 - **段階2の Athena**：`oic` で本物の Athena に確認用のデータを置いて確認した。6章の分析エージェントは、Bedrock の Claude に質問して Athena から答えを得るところまで動いた。確認用のリソースは削除済み。
+- **段階3の AgentCore Memory**：`oic` で東京リージョンに確認用の Memory を作って確認した。4章のエージェントが、最初の会話で聞いた内容を、別の会話で思い出して答えるところまで動いた。確認用の Memory は削除済み。
+- **段階3の Knowledge Bases**：検索ツールは、AWS の応答を模した値でのテストだけ通している。本物の Knowledge Base は作れていない。作るには専用の IAM ロールが要り、その作成が Claude Code の安全チェックで止められたため。
 
 ## 段階2で決めたこと
 
@@ -36,14 +38,18 @@
 - **Aurora と RDS は、引き続き MCP Toolbox を使う。**中身が PostgreSQL なので、そのまま接続できる。
 - **Athena はワークグループを指定して使う。**クエリ結果の保存先（S3）をワークグループに設定しておき、環境変数 `ATHENA_WORKGROUP` で渡す。
 
+## 段階3で決めたこと
+
+- **ADK とつなぐ部品は自作した。**`samples/chapter04/memory_agent/knowledge_base.py`（Knowledge Bases の検索ツール）と `agentcore_memory.py`（AgentCore Memory の MemoryService）。
+- **Knowledge Bases のベクトルの保存先は S3 Vectors にする。**置いておくだけで料金がかかる検索用 DB（OpenSearch Serverless）を避けるため。
+- **AgentCore Memory を使う実行は `create_runner()` 経由にする。**`adk run` の `--memory_service_uri` は、ADK 組み込みの MemoryService にしか対応していないため。
+- **リージョンは東京のままでよい。**AgentCore Memory、Knowledge Bases、S3 Vectors は東京で使えた。
+
 ## 段階ごとの見通しと確認方法
 
 | 段階 | 見通し | ローカルで確認できるもの | 本物の AWS が必要なもの |
 |---|---|---|---|
-| 3 | 一番不確か。ADK とつなぐ部品の自作が未検証 | なし | Knowledge Bases、AgentCore Memory |
-| 4 | たぶんいける。8章の書き直しの量が多い（20ファイル前後） | なし | App Runner、CloudWatch |
-
-段階3は、書き換える前にまず小さく試す。たとえば AgentCore Memory に1件だけ保存して読み出せるかを確かめ、だめなら Google のまま残すと決める。
+| 4 | たぶんいける。8章の書き直しの量が多い（20ファイル前後）。デプロイの確認には IAM ロールの作成が要る | なし | App Runner、CloudWatch |
 
 ## 権限
 
@@ -54,13 +60,13 @@
 
 会社の AWS 全体に掛かる制限（SCP）はユーザー側から見えない。あれば、実際に操作したときに拒否されて初めて分かる。
 
+権限とは別に、Claude Code には IAM ロールの作成や権限の付与を自動では実行しない安全チェックがある。ロールが要る確認（Knowledge Bases、デプロイ）は、人がロールを作るか、その操作を許可してから進める。
+
 ## 注意点
 
 - **8章は丸ごと AWS に移す。**Google の Cloud Run から AWS の RDS や Bedrock を呼ぶ形にすると、接続も認証も通らない。中途半端に混ぜない。
 - **料金がかかるもの。**Aurora、Knowledge Bases（裏で検索用の DB が動く）、App Runner は、置いておくだけで課金される。ルール2を守る。
 - **東京以外に作ったものは消し忘れやすい。**別のリージョンのリソースは、東京の画面には出てこない。消すときは、作ったリージョンを見て消す。
-- **AgentCore が使えるリージョンは未確認。**東京で使えなければ、米国のリージョンで試す（ルール6）。
-- **RAG と Memory Bank は、ADK 用の部品が AWS 側に無い。**つなぎのコードを自作する。
 
 ## 変えないもの
 

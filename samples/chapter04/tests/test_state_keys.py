@@ -2,7 +2,7 @@
 """Stateキー定義と型安全なアクセサのテスト
 
 samples/chapter04/ ディレクトリから `python -m pytest` で実行する。
-GCP接続は不要。
+クラウドへの接続は不要。
 """
 from memory_agent.state_keys import (
     StateKeys,

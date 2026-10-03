@@ -5,7 +5,7 @@
 samples/chapter04/ ディレクトリからでも、リポジトリルートからでも
 `python -m pytest` で実行できる。
 （pytest-asyncio が必要）
-GCP接続は不要。
+クラウドへの接続は不要。
 
 補完: 紙面では文字列リテラル（"user:name" 等）でStateキーを記述しているが、
 samplesでは memory_agent/state_keys.py の定数に整合させている。
