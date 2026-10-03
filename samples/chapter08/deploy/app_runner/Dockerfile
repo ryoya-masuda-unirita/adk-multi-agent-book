@@ -1,5 +1,5 @@
-# samples/chapter08/deploy/cloud_run/Dockerfile
-# Cloud Run用コンテナイメージ（8-2-5節の完全版）
+# samples/chapter08/deploy/app_runner/Dockerfile
+# App Runner用コンテナイメージ（8-2-5節の完全版）
 FROM python:3.11-slim
 
 WORKDIR /app

@@ -1,5 +1,5 @@
 # samples/chapter08/support_agent/agent.py
-"""Agent Engineデプロイ用カスタマーサポートエージェント
+"""AgentCore Runtimeデプロイ用カスタマーサポートエージェント
 
 ルーティングと専門エージェントを分け、各Agentでbedrock/global.anthropic.claude-sonnet-5-5
 （Amazon Bedrock経由のClaude）を明示するマルチエージェント構成の例。
@@ -16,7 +16,7 @@ from .tools import escalate_to_human, get_order_status, search_faq
 
 
 class StructuredFormatter(logging.Formatter):
-    """Cloud Logging向けの構造化フォーマッタ"""
+    """CloudWatch Logs向けの構造化フォーマッタ"""
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry: dict = {

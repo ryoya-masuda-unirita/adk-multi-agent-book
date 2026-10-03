@@ -1,12 +1,18 @@
-# samples/chapter08/deploy/gke/deployment.yaml
-# GKE用Kubernetesマニフェスト（8-2-6節の完全版）
+# samples/chapter08/deploy/eks/deployment.yaml
+# Amazon EKS用Kubernetesマニフェスト（8-2-6節の完全版）
 # Deployment + Service + HPA（Horizontal Pod Autoscaler）の最小構成
 #
-# 使い方（my-project は自身のプロジェクトIDに置換すること）:
-#   sed "s/my-project/${GOOGLE_CLOUD_PROJECT}/g" deployment.yaml | kubectl apply -f -
+# 使い方（123456789012 は自身のAWSアカウントIDに置換すること）:
+#   sed "s/123456789012/${AWS_ACCOUNT_ID}/g" deployment.yaml | kubectl apply -f -
 #
-# 注: adk deployによるGKEデプロイ時のServiceタイプが
-#     デフォルトでClusterIP。外部公開にはIngressまたはLoadBalancerを別途設定する
+# 注: ServiceタイプはClusterIP。外部公開にはIngressまたはLoadBalancerを別途設定する
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-agent
+  # コンテナからAmazon Bedrockを呼び出す権限は、このServiceAccountにIAMロールを
+  # 関連付けて与える（EKS Pod Identityで、Bedrockの呼び出しを許可したロールを割り当てる）
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,16 +29,17 @@ spec:
       labels:
         app: my-agent
     spec:
+      serviceAccountName: my-agent
       containers:
         - name: agent
-          # コンテナイメージ（my-project は自身のプロジェクトIDに置換）
-          image: gcr.io/my-project/my-agent:latest
+          # コンテナイメージ（123456789012 は自身のAWSアカウントIDに置換）
+          image: 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/my-agent:latest
           ports:
             - containerPort: 8080
           env:
-            - name: GOOGLE_CLOUD_PROJECT
-              # 自身のプロジェクトIDに置換
-              value: "my-project"
+            - name: AWS_REGION
+              # Bedrockを呼び出すリージョン
+              value: "ap-northeast-1"
             - name: DATABASE_URL
               # DB接続文字列はSecretから取得する（コードやマニフェストに直書きしない）
               valueFrom:

@@ -1,8 +1,8 @@
-# samples/chapter08/deploy/cloud_run/app.py
-"""Cloud Run用のHTTPサーバー（8-2-5節の完全版）
+# samples/chapter08/deploy/app_runner/app.py
+"""App Runner用のHTTPサーバー（8-2-5節の完全版）
 
-ADKエージェントをFastAPIでラップし、Cloud Run上でHTTPサービスとして
-公開する。Session永続化はDatabaseSessionService（Cloud SQL等の外部DB）を使用する。
+ADKエージェントをFastAPIでラップし、AWS App Runner上でHTTPサービスとして
+公開する。Session永続化はDatabaseSessionService（Amazon RDS等の外部DB）を使用する。
 
 実行前に以下の環境変数を設定すること:
   DATABASE_URL: セッション保存先のDB接続文字列
@@ -37,7 +37,7 @@ def get_runner() -> Runner:
     if not db_url:
         raise RuntimeError("DATABASE_URL を設定してください")
 
-    # セッションサービスは外部DBを使用（Cloud SQL等）
+    # セッションサービスは外部DBを使用（Amazon RDS等）
     # 接続文字列は環境変数から取得する（コードに直書きしない）
     session_service = DatabaseSessionService(db_url=db_url)
     runner = Runner(
@@ -112,13 +112,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    """Liveness Probe用エンドポイント（GKEのlivenessProbeでも使用）"""
+    """ヘルスチェック用エンドポイント（App Runnerのヘルスチェック、EKSのlivenessProbeで使用）"""
     return {"status": "ok"}
 
 
 @app.get("/ready")
 async def ready() -> dict[str, str]:
-    """Readiness Probe用エンドポイント（GKEのreadinessProbeでも使用）"""
+    """Readiness Probe用エンドポイント（EKSのreadinessProbeで使用）"""
     return {"status": "ready"}
 
 

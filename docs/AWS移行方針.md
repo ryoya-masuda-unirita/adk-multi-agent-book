@@ -21,7 +21,7 @@
 | 1 | Secret Manager → Secrets Manager、セッション保存と Cloud SQL → RDS | 4, 6, 10 | 済み（ローカルで確認） |
 | 2 | Firestore → DynamoDB、Spanner → Aurora、BigQuery → Athena | 2, 5, 6 | 済み（DynamoDB と Aurora はローカル、Athena は本物で確認） |
 | 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | 済み（どちらも本物で確認） |
-| 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 10 | 10章の監査ログだけ済み（本物の CloudWatch Logs で確認）。8章は未着手 |
+| 4 | デプロイ（Agent Engine → AgentCore Runtime、Cloud Run → App Runner、GKE → EKS）と監視（Cloud Logging → CloudWatch） | 8, 10 | 済み。AgentCore Runtime と監視は本物で確認。App Runner と EKS は本物では未確認（下の「残っているもの」を参照） |
 | 追加 | 6章の `gcloud` コマンド例 → `aws` コマンド | 6 | 済み（読み取りだけのコマンドを本物で確認） |
 | 追加 | 7章の A2A サーバーのトークン検証：Google の ID トークン → Amazon Cognito | 7 | 済み（本物の Cognito が発行したトークンで確認。正しいトークンは通り、改ざん・別クライアント・権限不足は拒否された） |
 | 追加 | 5章の個人情報ガードレール：Cloud DLP → Bedrock Guardrails | 5 | 済み（本物で確認。日本語の文で電話番号・メール・カード番号・マイナンバー・旅券番号を隠せた） |
@@ -37,18 +37,22 @@
 
 ## 残っているもの
 
-| 対象 | 章 | 止まっている理由 |
-|---|---|---|
-| デプロイと監視の全体 | 8 | 決めることが2つある。下の「8章で決めること」を参照 |
+コードの書き換えは全部終わった。残っているのは、本物の AWS で確認できていないものだけ。
 
-### 8章で決めること
+| 対象 | 章 | 確認できたこと | 確認できていないこと |
+|---|---|---|---|
+| App Runner へのデプロイ（`deploy/app_runner/`） | 8 | コンテナをこのPCで動かし、Bedrock と PostgreSQL につないで会話できた | App Runner のサービス作成。このPCからコンテナ置き場（ECR）への大きなアップロードが途中で切れて、イメージを送れなかった |
+| EKS 用マニフェスト（`deploy/eks/deployment.yaml`） | 8 | YAML として正しく読める | クラスターへの適用。EKS のクラスターを作っていない（作成に時間と費用がかかるため） |
+| RDS、Secrets Manager、DynamoDB、Aurora | 4, 5, 6, 10 | ローカルの代用品では動いた | 本物への接続 |
 
-1. **Agent Engine の置き換え先。**AgentCore Runtime にすると決めた（2026-10-04）。うまくいかない点が出たら、その時点で見直す。
-2. **IAM ロールをどう作るか。**ロールは作ってよいと決めた（2026-10-04）。`.claude/settings.local.json` に `aws iam create-role` などの許可を入れたので、Claude Code から作成と削除ができる。
+### 8章で決めたこと
 
-### 8章の進み具合（作業中）
+1. **Agent Engine の置き換え先は AgentCore Runtime。**（2026-10-04 に決定）
+2. **IAM ロールは作ってよい。**（2026-10-04 に決定）`.claude/settings.local.json` に `aws iam create-role` などの許可を入れたので、Claude Code から作成と削除ができる。
 
-小さく試した結果、AgentCore Runtime で進められると分かった（2026-10-04）。
+### 8章でやったこと
+
+小さく試した結果、AgentCore Runtime で進められると分かり、そのまま書き換えた（2026-10-04）。
 
 - **ADK のエージェントがそのまま載った。**`support_agent`（振り分け役と専門役のマルチエージェント）を載せて呼び出すと、正しく答えが返った。同じセッション内では前の質問も覚えていた。
 - **コンテナではなく、コードを zip で渡す方式にする。**AgentCore Runtime のコンテナは ARM64 用が必要だが、このPC（WSL2）では作れなかった。zip 方式なら、依存パッケージを ARM64 向けに取得して固めるだけで済む（`uv pip install --python-platform aarch64-manylinux_2_28`）。zip は約65MB。
@@ -63,8 +67,8 @@
 | `deploy/deploy_sdk.py`、`deploy/deploy.sh` を AgentCore Runtime 向けに書き換える | 済み（本物で確認。デプロイ、一覧、更新、削除が動いた） |
 | `query_with_retry.py`、`test_alert.py` を AgentCore Runtime の呼び出しに書き換える | 済み（本物で確認。混雑時や障害時のリトライだけは、その状況を起こせないので未確認） |
 | `monitoring/` 以下を CloudWatch 向けに書き換える | 済み（本物で確認。エラーを発生させると、エラー率のアラームが約40秒で発火した） |
-| `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（App Runner など、EKS）に書き換える | 未着手 |
-| README、`requirements.txt`、`.env.example` を直す | 未着手 |
+| `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（`deploy/app_runner/`、`deploy/eks/`）に書き換える | 済み（コンテナはローカルで確認。App Runner と EKS への実デプロイは未確認） |
+| README、`requirements.txt`、`.env.example` を直す | 済み |
 
 監視について分かったこと。
 
@@ -73,7 +77,11 @@
 - **不正なリクエストのログは WARNING で出る。**`incident_response.py` は ERROR のログを集計するので、`test_alert.py` で起こしたエラーは集計に出てこない。
 - **遅いトレースの抽出は、結果0件でしか確認できていない。**X-Ray にトレースを記録するには、CloudWatch の Transaction Search を有効にする必要がある。
 
-確認のために作った AWS のリソース（ランタイム、IAM ロール、S3 バケット、アラーム、ダッシュボード、SNS トピック）は、すべて削除済み。
+コンテナのアップロードについて分かったこと。
+
+- **このPCから ECR への大きなアップロードが通らない。**約370MBの層が、`docker push` でも AWS の API を直接使う方法でも、途中でタイムアウトした。小さな層は送れた。S3 への65MBのアップロードは問題なかったので、ECR 向けの通信だけの問題と見られる。原因（社内ネットワークの制限か、回線の問題か）は調べていない。
+
+確認のために作った AWS のリソース（ランタイム、IAM ロール、S3 バケット、ECR リポジトリ、アラーム、ダッシュボード、SNS トピック）は、すべて削除済み。
 
 ## 段階2で決めたこと
 
@@ -89,12 +97,6 @@
 - **AgentCore Memory を使う実行は `create_runner()` 経由にする。**`adk run` の `--memory_service_uri` は、ADK 組み込みの MemoryService にしか対応していないため。
 - **リージョンは東京のままでよい。**AgentCore Memory、Knowledge Bases、S3 Vectors は東京で使えた。
 - **検索結果を絞るスコアのしきい値は 0.5〜0.6 にする。**実際に試すと、関連する文書が 0.65〜0.75、関連の薄い文書が 0.55 前後だった。0.7 にすると関連する文書まで落ちる。
-
-## 段階ごとの見通しと確認方法
-
-| 段階 | 見通し | ローカルで確認できるもの | 本物の AWS が必要なもの |
-|---|---|---|---|
-| 4 | たぶんいける。8章の書き直しの量が多い（20ファイル前後）。デプロイの確認には IAM ロールの作成が要る | なし | App Runner、CloudWatch |
 
 ## 権限
 
@@ -117,4 +119,4 @@
 
 - `google_search` と `BuiltInCodeExecutor` を使うエージェント（2章、9章）。Gemini 専用の機能のため。
 - Google カレンダーの OAuth のサンプル（2章）。Google のサービス自体を使う例のため。
-- `samples/chapter08/deploy/session_migrator.py`。Agent Engine からセッションを引っ越すための道具のため。
+- `samples/chapter08/deploy/session_migrator.py`。Agent Engine からセッションを引っ越すための道具のため。8章でこれだけは Google Cloud の認証とライブラリが要る。

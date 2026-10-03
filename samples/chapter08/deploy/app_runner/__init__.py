@@ -1,4 +1,4 @@
-"""Cloud Run deployment sample agent."""
+"""App Runner deployment sample agent."""
 
 from . import agent as agent
 from .agent import root_agent

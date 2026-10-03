@@ -1,5 +1,5 @@
-# samples/chapter08/deploy/cloud_run/agent.py
-"""Cloud Runデプロイ用のエージェント定義
+# samples/chapter08/deploy/app_runner/agent.py
+"""App Runnerデプロイ用のエージェント定義
 
 app.pyが `from agent import root_agent` で読み込む最小構成のエージェント。
 実際のデプロイでは、samples/chapter08/support_agent/ のエージェント定義を
