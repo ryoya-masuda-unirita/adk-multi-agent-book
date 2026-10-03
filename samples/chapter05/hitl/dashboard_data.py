@@ -1,18 +1,37 @@
 # 5-5-7. 発展: 承認ダッシュボードの設計
-# 実行には google-cloud-firestore パッケージが必要
+# 実行には boto3 パッケージと、DynamoDBのテーブル（パーティションキー: request_id）が必要
 """承認ダッシュボードのデータ取得"""
 from datetime import datetime, timedelta
 
-from google.cloud import firestore
-from google.cloud.firestore_v1.base_query import FieldFilter
+import boto3
+from boto3.dynamodb.conditions import Attr
 
 
 class ApprovalDashboard:
     """承認ダッシュボードのデータを提供するクラス"""
 
-    def __init__(self, project_id: str):
-        self.db = firestore.Client(project=project_id)
-        self.collection = self.db.collection("approval_requests")
+    def __init__(
+        self,
+        table_name: str = "approval_requests",
+        region_name: str | None = None,
+    ):
+        dynamodb = boto3.resource("dynamodb", region_name=region_name)
+        self.table = dynamodb.Table(table_name)
+
+    def _scan_recent(self, since: datetime) -> list[dict]:
+        """指定時刻以降に作成されたリクエストを取得する"""
+        # created_atはISO 8601形式の文字列のため、文字列の大小で時刻を比較できる
+        scan_kwargs = {
+            "FilterExpression": Attr("created_at").gte(since.isoformat()),
+        }
+        items = []
+        while True:
+            response = self.table.scan(**scan_kwargs)
+            items.extend(response["Items"])
+            # 1回のscanで返るのは最大1MBのため、続きがあれば取得を繰り返す
+            if "LastEvaluatedKey" not in response:
+                return items
+            scan_kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
 
     def get_summary(self) -> dict:
         """ダッシュボードサマリーを取得する"""
@@ -20,11 +39,7 @@ class ApprovalDashboard:
         last_24h = now - timedelta(hours=24)
 
         # 過去24時間のリクエスト
-        recent_docs = (
-            self.collection
-            .where(filter=FieldFilter("created_at", ">=", last_24h))
-            .stream()
-        )
+        recent_items = self._scan_recent(last_24h)
 
         summary = {
             "pending": 0,
@@ -37,8 +52,7 @@ class ApprovalDashboard:
 
         response_times = []
 
-        for doc in recent_docs:
-            data = doc.to_dict()
+        for data in recent_items:
             status = data["status"]
             summary[status] = summary.get(status, 0) + 1
 
@@ -56,7 +70,8 @@ class ApprovalDashboard:
             if data["decisions"]:
                 first_decision = data["decisions"][0]
                 response_time = (
-                    first_decision["timestamp"] - data["created_at"]
+                    datetime.fromisoformat(first_decision["timestamp"])
+                    - datetime.fromisoformat(data["created_at"])
                 ).total_seconds() / 60
                 response_times.append(response_time)
 

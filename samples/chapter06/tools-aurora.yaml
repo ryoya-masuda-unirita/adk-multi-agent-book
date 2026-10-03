@@ -1,0 +1,15 @@
+# samples/chapter06/tools-aurora.yaml
+kind: source
+name: my-aurora
+type: postgres
+host: ${DB_HOST}
+port: 5432
+database: mydb
+user: app-user
+password: ${DB_PASSWORD}
+---
+kind: tool
+name: execute_query
+type: postgres-execute-sql
+source: my-aurora
+description: Amazon Aurora (PostgreSQL互換) にクエリを実行する（読み取り専用）

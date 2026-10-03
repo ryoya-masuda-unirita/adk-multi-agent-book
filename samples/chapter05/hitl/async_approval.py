@@ -1,18 +1,24 @@
 # 5-5-4. 非同期承認フロー
-# 実行には google-cloud-firestore パッケージが必要
+# 実行には boto3 パッケージと、DynamoDBのテーブル（パーティションキー: request_id）が必要
 """非同期承認フローの実装"""
+import json
 import uuid
 from datetime import datetime, timedelta
+from decimal import Decimal
 
-from google.cloud import firestore
+import boto3
 
 
 class AsyncApprovalManager:
-    """Firestoreを使用した非同期承認フロー"""
+    """DynamoDBを使用した非同期承認フロー"""
 
-    def __init__(self, project_id: str):
-        self.db = firestore.Client(project=project_id)
-        self.collection = self.db.collection("approval_requests")
+    def __init__(
+        self,
+        table_name: str = "approval_requests",
+        region_name: str | None = None,
+    ):
+        dynamodb = boto3.resource("dynamodb", region_name=region_name)
+        self.table = dynamodb.Table(table_name)
 
     def create_request(
         self,
@@ -24,16 +30,17 @@ class AsyncApprovalManager:
         """承認リクエストを作成する"""
         request_id = str(uuid.uuid4())
 
-        doc_ref = self.collection.document(request_id)
-        doc_ref.set({
+        # DynamoDBは日時型を持たないため、ISO 8601形式の文字列で保存する
+        self.table.put_item(Item={
             "request_id": request_id,
             "tool_name": tool_name,
-            "tool_input": tool_input,
+            # DynamoDBはfloatを保存できないため、小数をDecimalに変換する
+            "tool_input": json.loads(json.dumps(tool_input), parse_float=Decimal),
             "requested_by": requested_by,
             "approvers": approvers,
             "status": "pending",
-            "created_at": datetime.now(),
-            "expires_at": datetime.now() + timedelta(hours=24),
+            "created_at": datetime.now().isoformat(),
+            "expires_at": (datetime.now() + timedelta(hours=24)).isoformat(),
             "decisions": [],
         })
 
@@ -49,13 +56,11 @@ class AsyncApprovalManager:
         comment: str = "",
     ) -> bool:
         """承認リクエストを承認する"""
-        doc_ref = self.collection.document(request_id)
-        doc = doc_ref.get()
+        data = self.table.get_item(Key={"request_id": request_id}).get("Item")
 
-        if not doc.exists:
+        if data is None:
             return False
 
-        data = doc.to_dict()
         if data["status"] != "pending":
             return False
 
@@ -66,11 +71,10 @@ class AsyncApprovalManager:
             "approver_id": approver_id,
             "decision": "approved",
             "comment": comment,
-            "timestamp": datetime.now(),
+            "timestamp": datetime.now().isoformat(),
         })
-        data["status"] = "approved"
 
-        doc_ref.update(data)
+        self._update_decision(request_id, "approved", data["decisions"])
         return True
 
     def reject(
@@ -80,13 +84,11 @@ class AsyncApprovalManager:
         reason: str,
     ) -> bool:
         """承認リクエストを拒否する"""
-        doc_ref = self.collection.document(request_id)
-        doc = doc_ref.get()
+        data = self.table.get_item(Key={"request_id": request_id}).get("Item")
 
-        if not doc.exists:
+        if data is None:
             return False
 
-        data = doc.to_dict()
         if data["status"] != "pending":
             return False
 
@@ -94,22 +96,38 @@ class AsyncApprovalManager:
             "approver_id": approver_id,
             "decision": "rejected",
             "reason": reason,
-            "timestamp": datetime.now(),
+            "timestamp": datetime.now().isoformat(),
         })
-        data["status"] = "rejected"
 
-        doc_ref.update(data)
+        self._update_decision(request_id, "rejected", data["decisions"])
         return True
 
     def check_status(self, request_id: str) -> dict:
         """承認リクエストのステータスを確認する"""
-        doc_ref = self.collection.document(request_id)
-        doc = doc_ref.get()
+        data = self.table.get_item(Key={"request_id": request_id}).get("Item")
 
-        if not doc.exists:
+        if data is None:
             return {"status": "not_found"}
 
-        return doc.to_dict()
+        return data
+
+    def _update_decision(
+        self,
+        request_id: str,
+        status: str,
+        decisions: list[dict],
+    ):
+        """ステータスと判断履歴を更新する"""
+        # statusはDynamoDBの予約語のため、#statusという別名で指定する
+        self.table.update_item(
+            Key={"request_id": request_id},
+            UpdateExpression="SET #status = :status, decisions = :decisions",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={
+                ":status": status,
+                ":decisions": decisions,
+            },
+        )
 
     def _notify_approvers(
         self,
@@ -119,5 +137,5 @@ class AsyncApprovalManager:
         tool_input: dict,
     ):
         """承認者に通知を送信する（実装例）"""
-        # Pub/Sub、Slack、メール等の通知チャネルと統合
+        # SNS、Slack、メール等の通知チャネルと統合
         pass

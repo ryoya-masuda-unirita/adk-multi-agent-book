@@ -18,7 +18,7 @@
 | `guardrails/dlp_guardrail.py` | Cloud DLP APIを使った機密情報検出（発展） |
 | `guardrails/agent.py` | ガードレールを適用したエージェント定義 |
 | `hitl/approval_flow.py` | ApprovalManagerによる同期承認フロー |
-| `hitl/async_approval.py` | Firestoreを使った非同期承認フロー（発展） |
+| `hitl/async_approval.py` | DynamoDBを使った非同期承認フロー（発展） |
 | `hitl/escalation.py` | エスカレーション設計 |
 | `hitl/dashboard_data.py` | 承認ダッシュボードのデータ取得（発展） |
 | `hitl/agent.py`／`hitl/tools.py` | HITL対応エージェントと承認対象の業務ツール |
@@ -39,7 +39,7 @@ cd expense_agent
 cp .env.example .env
 ```
 
-`requirements.txt`はADKの`eval` extraとpytestを含みます。`google-cloud-dlp`と`google-cloud-firestore`は発展サンプル（`guardrails/dlp_guardrail.py`、`hitl/async_approval.py`、`hitl/dashboard_data.py`）を動かす場合にだけ必要です。
+`requirements.txt`はADKの`eval` extraとpytestを含みます。`google-cloud-dlp`は発展サンプル（`guardrails/dlp_guardrail.py`）を動かす場合にだけ必要です。`hitl/async_approval.py`と`hitl/dashboard_data.py`はBedrockと同じ`boto3`でDynamoDBを使います。
 
 ## 実行
 
@@ -71,4 +71,4 @@ pytest tests/test_guardrails.py -v
 
 ## Google Cloudが必要なサンプル
 
-`guardrails/dlp_guardrail.py`はCloud DLP APIと環境変数`GOOGLE_CLOUD_PROJECT`が必要です。`hitl/async_approval.py`と`hitl/dashboard_data.py`はFirestoreを使います。どちらもGoogle Cloudプロジェクトと課金の有効化が前提です。それ以外のサンプルはAPIキーだけで動きます。
+`guardrails/dlp_guardrail.py`はCloud DLP APIと環境変数`GOOGLE_CLOUD_PROJECT`が必要です。Google Cloudプロジェクトと課金の有効化が前提です。`hitl/async_approval.py`と`hitl/dashboard_data.py`はDynamoDBを使い、パーティションキーが`request_id`（文字列）のテーブル`approval_requests`が必要です。それ以外のサンプルはAPIキーだけで動きます。
