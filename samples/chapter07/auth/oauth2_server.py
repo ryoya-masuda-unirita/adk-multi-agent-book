@@ -7,16 +7,17 @@ Starlette アプリに add_middleware で登録する。Agent Card エンドポ�
 スコープ（expense:read / expense:write）の確認を行う。
 
 環境変数:
-    OAUTH2_AUDIENCE: トークン検証時の audience（必須）
+    COGNITO_USER_POOL_ID: トークンを発行するAmazon CognitoユーザープールのID（必須）
+    COGNITO_CLIENT_ID: 呼び出しを許可するアプリクライアントのID（必須）
+    AWS_REGION: ユーザープールのリージョン（デフォルト: ap-northeast-1）
 """
 
 import os
 
+import jwt
 import uvicorn
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token
 from a2a.types import AgentCard
 from google.adk import Agent
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
@@ -25,14 +26,29 @@ from google.adk.a2a.utils.agent_to_a2a import to_a2a
 def verify_token(token: str) -> dict | None:
     """OAuth2トークンを検証する"""
     try:
-        # Google Cloud Identity Platform を使用する場合
-        claims = id_token.verify_oauth2_token(
-            token,
-            google_requests.Request(),
-            audience=os.environ.get("OAUTH2_AUDIENCE"),
+        # Amazon Cognito を使用する場合
+        region = os.environ.get("AWS_REGION", "ap-northeast-1")
+        issuer = (
+            f"https://cognito-idp.{region}.amazonaws.com/"
+            f"{os.environ['COGNITO_USER_POOL_ID']}"
         )
+        # ユーザープールが公開している鍵で、トークンの署名・発行元・有効期限を検証する
+        signing_key = jwt.PyJWKClient(
+            f"{issuer}/.well-known/jwks.json"
+        ).get_signing_key_from_jwt(token)
+        claims = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            issuer=issuer,
+        )
+        # Cognitoのアクセストークンはaudienceを持たないため、client_idで呼び出し元を確認する
+        if claims.get("token_use") != "access":
+            return None
+        if claims.get("client_id") != os.environ["COGNITO_CLIENT_ID"]:
+            return None
         return claims
-    except ValueError:
+    except jwt.PyJWTError:
         return None
 
 
@@ -55,7 +71,10 @@ class OAuth2Middleware(BaseHTTPMiddleware):
 
         # 必要なスコープの確認
         required_scopes = {"expense:read", "expense:write"}
-        token_scopes = set(claims.get("scope", "").split())
+        # Cognitoのスコープは「リソースサーバーの識別子/スコープ名」の形式のため、スコープ名だけを取り出す
+        token_scopes = {
+            scope.split("/")[-1] for scope in claims.get("scope", "").split()
+        }
         if not required_scopes.issubset(token_scopes):
             return JSONResponse({"error": "Insufficient scope"}, status_code=403)
 

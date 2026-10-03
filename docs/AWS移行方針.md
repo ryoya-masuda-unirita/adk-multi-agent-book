@@ -23,6 +23,7 @@
 | 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | コードは済み。AgentCore Memory は本物で確認済み。Knowledge Bases は本物では未確認 |
 | 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 10 | 10章の監査ログだけ済み（本物の CloudWatch Logs で確認）。8章は未着手 |
 | 追加 | 6章の `gcloud` コマンド例 → `aws` コマンド | 6 | 済み（読み取りだけのコマンドを本物で確認） |
+| 追加 | 7章の A2A サーバーのトークン検証：Google の ID トークン → Amazon Cognito | 7 | 済み（本物の Cognito が発行したトークンで確認。正しいトークンは通り、改ざん・別クライアント・権限不足は拒否された） |
 | 追加 | 5章の個人情報ガードレール：Cloud DLP → Bedrock Guardrails | 5 | 済み（本物で確認。日本語の文で電話番号・メール・カード番号・マイナンバー・旅券番号を隠せた） |
 
 確認の内容は次のとおり。
@@ -40,12 +41,11 @@
 |---|---|---|
 | デプロイと監視の全体 | 8 | 決めることが2つある。下の「8章で決めること」を参照 |
 | Knowledge Bases の本物での確認 | 4 | IAM ロールの作成が要る |
-| Google の ID トークンを検証する A2A サーバー（`auth/oauth2_server.py`） | 7 | 最初の洗い出しで漏れていた。置き換えるなら Amazon Cognito になるが、検証の作りが変わる |
 
 ### 8章で決めること
 
-1. **Agent Engine の置き換え先。**8章は、テスト用スクリプトやアラートまで Agent Engine（エージェントの置き場所）を前提に書かれている。置き換え先は AgentCore Runtime が一番近いが、未検証。App Runner だけにまとめる手もある。
-2. **IAM ロールをどう作るか。**デプロイには、アプリ自身に持たせる権限（ロール）が要る。Claude Code の安全チェックがロールの作成を止めるため、人が作るか、その操作を許可する必要がある。
+1. **Agent Engine の置き換え先。**AgentCore Runtime にすると決めた（2026-10-04）。うまくいかない点が出たら、その時点で見直す。
+2. **IAM ロールをどう作るか。**ロールは作ってよいと決めた（2026-10-04）。ただし Claude Code の安全チェックがロールの作成を止めるため、許可の設定を入れるか、人がコマンドを実行する必要がある。
 
 ## 段階2で決めたこと
 

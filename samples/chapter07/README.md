@@ -37,7 +37,7 @@ cd ../orchestrator
 cp .env.example .env
 ```
 
-`requirements.txt`はADKの`a2a` extraに加えて、`a2a-sdk>=0.3.24,<0.4.0`、`uvicorn`、`fastapi`（A2UIのWebSocket中継用）、`httpx`と`google-auth`（OAuth2用）を指定しています。
+`requirements.txt`はADKの`a2a` extraに加えて、`a2a-sdk>=0.3.24,<0.4.0`、`uvicorn`、`fastapi`（A2UIのWebSocket中継用）、`httpx`と`PyJWT`（OAuth2用）を指定しています。
 
 ADK v2.2.0のA2A実装はexperimental（`@a2a_experimental`）です。インスタンス化時に`UserWarning`が出ます。抑制する場合は環境変数`ADK_SUPPRESS_EXPERIMENTAL_FEATURE_WARNINGS=1`を設定してください。
 
@@ -82,7 +82,7 @@ python patterns/stage3_server.py
 
 `a2ui/relay_server.py`と`a2ui/dashboard.py`もA2Aサーバーの起動が前提です。
 
-`auth/oauth2_client.py`は環境変数`OAUTH2_TOKEN_URL`／`OAUTH2_CLIENT_ID`／`OAUTH2_CLIENT_SECRET`／`OAUTH2_SCOPES`、`auth/oauth2_server.py`は`OAUTH2_AUDIENCE`が必要です。認証情報はコードに直書きせず、環境変数から取得してください。
+`auth/oauth2_client.py`は環境変数`OAUTH2_TOKEN_URL`／`OAUTH2_CLIENT_ID`／`OAUTH2_CLIENT_SECRET`／`OAUTH2_SCOPES`、`auth/oauth2_server.py`はAmazon Cognitoが発行したトークンを検証するため、`COGNITO_USER_POOL_ID`と`COGNITO_CLIENT_ID`が必要です。認証情報はコードに直書きせず、環境変数から取得してください。
 
 ## a2a-sdkのバージョンについて
 
