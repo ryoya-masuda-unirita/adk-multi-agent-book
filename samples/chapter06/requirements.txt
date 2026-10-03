@@ -1,4 +1,4 @@
-google-adk[mcp,gcp]==2.2.0
+google-adk[mcp]==2.2.0
 # Amazon Bedrock（Claude）をLiteLLM経由で呼ぶための依存。範囲はgoogle-adk[extensions]の指定に合わせる
 litellm>=1.83.7,<=1.83.14
 boto3>=1.34.0

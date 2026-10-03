@@ -18,7 +18,7 @@
 | `mcp_rds.py`／`tools-rds.yaml` | Amazon RDS（PostgreSQL）MCPサーバーとの統合 |
 | `mcp_aurora.py`／`tools-aurora.yaml` | Amazon Aurora（PostgreSQL互換）MCPサーバーとの統合 |
 | `mcp_dynamodb.py` | DynamoDB MCPサーバー（AWS Labs）との統合 |
-| `cli_basic.py` | gcloud CLIをツール化する基本パターン |
+| `cli_basic.py` | AWS CLIをツール化する基本パターン |
 | `cli_secure.py` | サブコマンドのホワイトリストによるCLI実行の制限 |
 | `cli_kubectl.py` | kubectlのツール化（`secrets`は意図的に除外） |
 | `cli_terraform.py` | Terraformのツール化 |
@@ -69,4 +69,4 @@ adk run infra_monitor
 
 `mcp_dynamodb.py`はAWS LabsのDynamoDB MCPサーバーを`uvx`で起動します。AthenaとDynamoDBの認証は、Bedrockと同じAWSプロファイルを使います。
 
-CLIラッパーのサンプルは実際に`gcloud`／`kubectl`／`terraform`を呼び出します。読み取り系のサブコマンドだけを許可するホワイトリストを実装していますが、対象の環境で実行される点に注意してください。`infra_monitor/tools.py`のkubectlラッパーはダミーデータを返す実装で、実際のクラスタには接続しません。
+CLIラッパーのサンプルは実際に`aws`／`kubectl`／`terraform`を呼び出します。読み取り系のサブコマンドだけを許可するホワイトリストを実装していますが、対象の環境で実行される点に注意してください。`infra_monitor/tools.py`のkubectlラッパーはダミーデータを返す実装で、実際のクラスタには接続しません。

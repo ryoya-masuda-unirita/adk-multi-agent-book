@@ -7,16 +7,16 @@ import shlex
 from google.adk import Agent
 
 
-def run_gcloud_command(command: str) -> dict:
-    """gcloud CLIコマンドを実行する
+def run_aws_command(command: str) -> dict:
+    """AWS CLIコマンドを実行する
 
     Args:
-        command: 実行するgcloudサブコマンド（例: "compute instances list"）
+        command: 実行するawsサブコマンド（例: "ec2 describe-instances"）
 
     Returns:
         コマンドの実行結果（stdout, stderr, return_code）"""
     # コマンド文字列を安全に分割
-    args = ["gcloud"] + shlex.split(command) + ["--format=json"]
+    args = ["aws"] + shlex.split(command) + ["--output", "json"]
 
     try:
         result = subprocess.run(
@@ -38,24 +38,24 @@ def run_gcloud_command(command: str) -> dict:
         }
 
 
-# gcloudツールを使うエージェント
-gcloud_agent = Agent(
-    name="gcloud_agent",
+# AWS CLIツールを使うエージェント
+aws_agent = Agent(
+    name="aws_agent",
     model="bedrock/global.anthropic.claude-sonnet-5-5",
-    instruction="""あなたはGoogle Cloudリソースの管理を支援するエージェントです。
+    instruction="""あなたはAWSリソースの管理を支援するエージェントです。
 
-    gcloudコマンドを使ってリソースの参照・管理を行います。
+    awsコマンドを使ってリソースの参照・管理を行います。
 
     ## 使用可能なコマンド
-    - compute instances list: VMインスタンスの一覧
-    - compute instances describe INSTANCE_NAME: VMの詳細
-    - run services list: Cloud Runサービスの一覧
-    - sql instances list: Cloud SQLインスタンスの一覧
-    - container clusters list: GKEクラスタの一覧
+    - ec2 describe-instances: EC2インスタンスの一覧
+    - ec2 describe-instances --instance-ids INSTANCE_ID: EC2インスタンスの詳細
+    - apprunner list-services: App Runnerサービスの一覧
+    - rds describe-db-instances: RDSインスタンスの一覧
+    - eks list-clusters: EKSクラスタの一覧
 
     ## 禁止事項
-    - delete / destroy を含むコマンドは実行しない
+    - delete / terminate を含むコマンドは実行しない
     - IAMポリシーの変更は行わない
-    - プロジェクトやリージョンの設定変更は行わない""",
-    tools=[run_gcloud_command],
+    - プロファイルやリージョンの設定変更は行わない""",
+    tools=[run_aws_command],
 )

@@ -9,34 +9,38 @@ from google.adk import Agent
 
 
 # 許可するサブコマンドのホワイトリスト
-ALLOWED_GCLOUD_SUBCOMMANDS = {
-    "compute instances list",
-    "compute instances describe",
-    "run services list",
-    "run services describe",
-    "sql instances list",
-    "container clusters list",
-    "container clusters describe",
+# 値は、対象リソースを指定するときに使うオプション名（リソースを指定できないものはNone）
+ALLOWED_AWS_SUBCOMMANDS = {
+    "ec2 describe-instances": "--instance-ids",
+    "apprunner list-services": None,
+    "apprunner describe-service": "--service-arn",
+    "rds describe-db-instances": "--db-instance-identifier",
+    "eks list-clusters": None,
+    "eks describe-cluster": "--name",
 }
 
 
-def safe_gcloud(subcommand: str, resource_name: str = "", flags: str = "") -> dict:
-    """安全にgcloudコマンドを実行する
+def safe_aws(subcommand: str, resource_name: str = "", flags: str = "") -> dict:
+    """安全にAWS CLIコマンドを実行する
 
     Args:
         subcommand: 実行するサブコマンド（ホワイトリスト内のもの）
-        resource_name: 対象リソース名（英数字・ハイフン・アンダースコアのみ）
-        flags: 追加フラグ（--region, --zone等）
+        resource_name: 対象リソースの名前・ID・ARN（英数字・ハイフン・アンダースコア・コロン・スラッシュのみ）
+        flags: 追加フラグ（--region等）
 
     Returns:
         コマンドの実行結果"""
     # サブコマンドのホワイトリスト検証
-    if subcommand not in ALLOWED_GCLOUD_SUBCOMMANDS:
+    if subcommand not in ALLOWED_AWS_SUBCOMMANDS:
         return {"error": f"許可されていないサブコマンドです: {subcommand}"}
 
-    # リソース名のバリデーション（英数字、ハイフン、アンダースコアのみ）
-    if resource_name and not re.match(r'^[a-zA-Z0-9_-]+$', resource_name):
+    # リソース名のバリデーション（英数字、ハイフン、アンダースコアと、ARNで使うコロン、スラッシュのみ）
+    if resource_name and not re.match(r'^[a-zA-Z0-9_:/-]+$', resource_name):
         return {"error": "リソース名に不正な文字が含まれています"}
+
+    resource_option = ALLOWED_AWS_SUBCOMMANDS[subcommand]
+    if resource_name and resource_option is None:
+        return {"error": f"このサブコマンドはリソースを指定できません: {subcommand}"}
 
     # フラグのバリデーション（--key=value形式のみ許可）
     safe_flags = []
@@ -48,11 +52,11 @@ def safe_gcloud(subcommand: str, resource_name: str = "", flags: str = "") -> di
                 return {"error": f"不正なフラグ形式です: {flag}"}
 
     # コマンドの組み立て（文字列結合ではなくリストで構築。shell=Trueは使わない）
-    cmd = ["gcloud"] + subcommand.split()
+    cmd = ["aws"] + subcommand.split()
     if resource_name:
-        cmd.append(resource_name)
+        cmd.extend([resource_option, resource_name])
     cmd.extend(safe_flags)
-    cmd.append("--format=json")
+    cmd.extend(["--output", "json"])
 
     try:
         result = subprocess.run(
@@ -71,11 +75,11 @@ def safe_gcloud(subcommand: str, resource_name: str = "", flags: str = "") -> di
 
 
 # セキュリティ強化されたエージェント
-secure_gcloud_agent = Agent(
-    name="secure_gcloud_agent",
+secure_aws_agent = Agent(
+    name="secure_aws_agent",
     model="bedrock/global.anthropic.claude-sonnet-5-5",
-    instruction="""Google Cloudリソースの参照を行うエージェントです。
-    safe_gcloudツールでリソース情報を取得します。
+    instruction="""AWSリソースの参照を行うエージェントです。
+    safe_awsツールでリソース情報を取得します。
     利用できるサブコマンドはホワイトリストで制限されています。""",
-    tools=[safe_gcloud],
+    tools=[safe_aws],
 )

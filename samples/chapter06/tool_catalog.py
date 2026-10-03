@@ -19,11 +19,11 @@ TOOL_CATALOG = {
         "risk_level": "high",  # 本番DBへのアクセス
         "approval_required": True,
     },
-    "gcloud": {
+    "aws": {
         "type": "cli",
-        "command": "gcloud",
-        "description": "Google Cloudリソースの管理",
-        "required_permissions": ["gcloud CLI認証済み"],
+        "command": "aws",
+        "description": "AWSリソースの管理",
+        "required_permissions": ["AWS CLI認証済み"],
         "risk_level": "high",
         "approval_required": True,
     },
