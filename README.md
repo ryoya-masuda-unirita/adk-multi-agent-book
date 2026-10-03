@@ -13,7 +13,7 @@
 | A2A | A2A v1.0系（第7章のみ。`a2a-sdk>=0.3.24,<0.4.0`） |
 | OS | macOS／Linux／WSL2（Windows） |
 | パッケージマネージャー | uv（推奨）またはpip |
-| Google Cloud CLI（gcloud） | 最新版（Google Cloudを使う章のみ） |
+| AWS CLI（aws） | v2の最新版（AWSのサービスを使う章のみ） |
 
 ADK v2.2.0は1.xに対する破壊的変更（Workflow Runtime、Task API、Event schemaの追加）を含みます。バージョンは固定ピンのまま使ってください。ADK v2.2.0のパッケージメタデータはPython 3.10以上を許容しますが、公式READMEの実行要件はPython 3.11+です。本書のサンプルも3.11以上で検証しています。
 
@@ -33,13 +33,13 @@ adk --version
 | 第1章 | AIエージェントの全体像 | `samples/chapter01/` | `google-adk==2.2.0` |
 | 第2章 | ADK：エージェント開発フレームワーク | `samples/chapter02/` | `google-adk[mcp]==2.2.0` |
 | 第3章 | Context Engineering & Agent Skills | `samples/chapter03/` | `google-adk==2.2.0` |
-| 第4章 | Session・Memory・RAG | `samples/chapter04/` | `google-adk[db,gcp]==2.2.0` |
+| 第4章 | Session・Memory・RAG | `samples/chapter04/` | `google-adk[db]==2.2.0` |
 | 第5章 | 評価・ガードレール・HITL | `samples/chapter05/` | `google-adk[eval]==2.2.0` |
-| 第6章 | MCP & ツール統合 | `samples/chapter06/` | `google-adk[mcp,gcp]==2.2.0` |
+| 第6章 | MCP & ツール統合 | `samples/chapter06/` | `google-adk[mcp]==2.2.0` |
 | 第7章 | A2Aマルチエージェント実践 | `samples/chapter07/` | `google-adk[a2a]==2.2.0` |
-| 第8章 | Agent Engine & AgentOps | `samples/chapter08/` | `google-adk[gcp,otel-gcp]==2.2.0` |
+| 第8章 | AgentCore Runtime & AgentOps | `samples/chapter08/` | `google-adk[db]==2.2.0` |
 | 第9章 | 設計原則 & アンチパターン | `samples/chapter09/` | `google-adk[eval]==2.2.0` |
-| 第10章 | セキュリティ & ガバナンス | `samples/chapter10/` | `google-adk[gcp]==2.2.0` |
+| 第10章 | セキュリティ & ガバナンス | `samples/chapter10/` | `google-adk==2.2.0` |
 
 各章のディレクトリにREADMEを置いています。収録ファイルの一覧と実行方法はそちらを参照してください。
 
@@ -53,6 +53,7 @@ adk --version
 | [付録B 参考文献](docs/references.md) | 本書が参照した公式ドキュメント・標準規格・書籍を章別に整理したリンク集 |
 | [新旧名称対照ガイド](docs/name-changes.md) | Google Cloud・ADK・A2A・MCPの名称変更・非推奨化の対照表。名称変更があり次第更新 |
 | [正誤表](docs/errata.md) | 書籍・サンプルコードの正誤情報 |
+| [AWS移行方針](docs/AWS移行方針.md) | このリポジトリのサンプルをGoogle CloudからAWSに置き換えた方針と、確認できたこと・できていないことの記録 |
 
 ## セットアップ
 
@@ -113,17 +114,15 @@ ADKは`model="bedrock/..."`という文字列を自動でLiteLLMに振り分け�
 
 `google_search`と`BuiltInCodeExecutor`はGemini専用の組み込み機能です。これらを使う`samples/chapter02/tools/builtin_tools.py`の2エージェントは、Geminiのまま残しています。このファイルを動かす場合だけ`GOOGLE_API_KEY`が必要です。
 
-Google Cloudのサービスを使う章では、あわせてADC（Application Default Credentials）を設定します。
+AWSのサービス（DynamoDB、Athena、AgentCoreなど）を使う章も、同じ`oic`プロファイルで認証します。プロファイルが使えることは次のコマンドで確認できます。
 
 ```bash
-gcloud auth application-default login
-gcloud config set project YOUR_PROJECT_ID
-gcloud services enable aiplatform.googleapis.com
+aws sts get-caller-identity --profile oic
 ```
 
 ## モデルについて
 
-サンプルは`gemini-3.5-flash`を明示指定しています。ADK v2.2.0の`LlmAgent`の既定モデルは`gemini-3-flash-preview`ですが、本書では暗黙の既定に依存せず、各エージェント定義で`model=`を書いています。
+サンプルは`bedrock/global.anthropic.claude-sonnet-5-5`（Amazon Bedrock上のClaude Sonnet 5.5）を明示指定しています。ADK v2.2.0の`LlmAgent`の既定モデルは`gemini-3-flash-preview`ですが、このリポジトリでは暗黙の既定に依存せず、各エージェント定義で`model=`を書いています。書籍の本文は`gemini-3.5-flash`を使っているため、モデル指定とクラウドのサービスは本文と異なります。
 
 モデルIDや料金が変わる場合は公式ドキュメントで確認し、`.env`または`agent.py`の`model=`引数で差し替えてください。サンプルは構造と設計パターンを学ぶためのもので、特定のモデル出力に依存しません。
 
@@ -135,19 +134,21 @@ gcloud services enable aiplatform.googleapis.com
 
 ### 課金が発生するサンプル
 
-次の章のサンプルはGoogle Cloudプロジェクトと課金の有効化が前提です。実行するとVertex AIのAPIコールに課金が発生します。
+すべての章で、モデルの呼び出し（Amazon Bedrock）に課金が発生します。次の章のサンプルは、それに加えてAWSのリソースを使います。
 
 | 章 | 課金対象のサービス |
 |---|---|
-| 第4章 | Vertex AI Memory Bank、Vertex AI RAG Engine、Cloud SQL（DatabaseSessionService利用時） |
-| 第5章 | Cloud DLP、Firestore（いずれも発展サンプルのみ） |
-| 第6章 | BigQuery、Cloud SQL、Spanner、Firestore（MCP Toolbox接続時） |
-| 第8章 | Vertex AI Agent Engine、Cloud Run／GKE、Cloud Monitoring、Cloud Trace |
-| 第10章 | Cloud Logging、Secret Manager |
+| 第2章 | Amazon Athena（`auth/iam_role_athena.py`のみ） |
+| 第4章 | Amazon Bedrock AgentCore Memory、Amazon Bedrock Knowledge Bases、Amazon RDS（DatabaseSessionService利用時） |
+| 第5章 | Amazon Bedrock Guardrails、Amazon DynamoDB（いずれも発展サンプルのみ） |
+| 第6章 | Amazon Athena、Amazon RDS、Amazon Aurora、Amazon DynamoDB（MCPサーバー接続時） |
+| 第7章 | Amazon Cognito（`auth/oauth2_server.py`のみ） |
+| 第8章 | Amazon Bedrock AgentCore Runtime、AWS App Runner／Amazon EKS、Amazon CloudWatch、AWS X-Ray |
+| 第10章 | Amazon CloudWatch Logs、AWS Secrets Manager |
 
-実行にかかる費用はモデル呼び出し回数とGoogle Cloudサービスの利用量に応じて変わります。課金状況はGoogle Cloud Consoleの「お支払い」ページで確認してください。
+実行にかかる費用はモデル呼び出し回数とAWSのサービスの利用量に応じて変わります。課金状況はAWSマネジメントコンソールの「請求とコスト管理」で確認してください。RDS・Aurora・App Runner・EKSは、動かしていなくても置いておくだけで費用がかかります。試したら削除してください。
 
-第1章から第3章、第7章、第9章のサンプルは、第2章と第7章の`auth/`配下のサンプル（追加の認証設定が必要。各章のREADMEを参照）を除き、AWSの`oic`プロファイルだけで動きます。第7章のA2A通信もローカルプロセス間で完結するため、Google Cloudプロジェクトは不要です。
+第1章、第3章、第9章のサンプルと、上の表に挙げたファイル以外の第2章・第7章のサンプルは、AWSの`oic`プロファイル（Bedrock）だけで動きます。第7章のA2A通信はローカルプロセス間で完結します。`samples/chapter08/deploy/session_migrator.py`だけは、移行元がVertex AI Agent EngineのためGoogle Cloudの認証が必要です。
 
 ### うまく動かないとき
 
@@ -156,8 +157,8 @@ gcloud services enable aiplatform.googleapis.com
 | `NoCredentialsError`／`Unable to locate credentials` | `AWS_PROFILE=oic`が設定されているか、`aws sts get-caller-identity --profile oic`が通るか |
 | `AccessDeniedException`（Bedrock） | 使用するモデルがBedrockで有効化されているか、推論プロファイルIDが正しいか |
 | `temperature is deprecated for this model` | Claude Sonnet 5.5系は`temperature`を受け付けない。`generate_content_config`から外す |
-| `API not enabled` | 該当するGoogle Cloud APIを`gcloud services enable`で有効化したか |
-| 認証エラーが頻発する | `gcloud auth application-default login`を再実行したか（トークンの期限切れ） |
+| `AccessDeniedException`（Bedrock以外） | `oic`プロファイルに、そのサービスを使う権限があるか |
+| `ResourceNotFoundException` | リソースのIDやARN、リージョン（`AWS_REGION`）が正しいか |
 | importエラー | その章の`requirements.txt`をインストールしたか（章ごとにextrasが異なる） |
 
 ## 正誤・質問

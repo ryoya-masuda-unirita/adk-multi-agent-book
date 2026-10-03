@@ -25,7 +25,7 @@ async def audit_tool_callback(
     }
     # 実運用では session_id/user_id も tool_context から取得してログに含める
 
-    # 構造化ログとして出力（Cloud Loggingと統合可能）
+    # 構造化ログとして出力（CloudWatch Logsと統合可能）
     logger.info(json.dumps(audit_entry, ensure_ascii=False))
 
     return None  # ツール呼び出しを続行

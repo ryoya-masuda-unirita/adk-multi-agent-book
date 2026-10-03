@@ -34,7 +34,7 @@ cp .env.example .env
 
 ## 実行
 
-インメモリのMemory Serviceで動かす場合は次のとおりです。Google Cloudプロジェクトは不要です。
+インメモリのMemory Serviceで動かす場合は次のとおりです。Bedrock以外のAWSのリソースは不要です。
 
 ```bash
 cd samples/chapter04
