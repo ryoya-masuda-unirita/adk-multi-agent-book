@@ -56,15 +56,24 @@
 - **監視に使える情報は自動で出る。**CloudWatch の `AWS/Bedrock-AgentCore` に、呼び出し回数（Invocations）、応答時間（Latency）、エラー数（UserErrors、SystemErrors）などが出る。アプリが標準出力に書いたログは、ロググループ `/aws/bedrock-agentcore/runtimes/<ランタイムID>-DEFAULT` に入る。
 - **エラーの出方。**不正なリクエストは `RuntimeClientError`、存在しないランタイムは `ResourceNotFoundException` になる。セッションIDは33文字以上が必要。
 
-残りの作業は次のとおり。
+進み具合は次のとおり。
 
-1. `deploy/deploy_sdk.py` と `deploy/deploy.sh` を AgentCore Runtime 向けに書き換える
-2. `query_with_retry.py` と `test_alert.py` を AgentCore Runtime の呼び出しに書き換える
-3. `monitoring/` 以下を CloudWatch 向けに書き換える
-4. `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（App Runner など、EKS）に書き換える
-5. README、`requirements.txt`、`.env.example` を直す
+| 作業 | 状態 |
+|---|---|
+| `deploy/deploy_sdk.py`、`deploy/deploy.sh` を AgentCore Runtime 向けに書き換える | 済み（本物で確認。デプロイ、一覧、更新、削除が動いた） |
+| `query_with_retry.py`、`test_alert.py` を AgentCore Runtime の呼び出しに書き換える | 済み（本物で確認。混雑時や障害時のリトライだけは、その状況を起こせないので未確認） |
+| `monitoring/` 以下を CloudWatch 向けに書き換える | 済み（本物で確認。エラーを発生させると、エラー率のアラームが約40秒で発火した） |
+| `deploy/cloud_run/` と `deploy/gke/` を AWS 向け（App Runner など、EKS）に書き換える | 未着手 |
+| README、`requirements.txt`、`.env.example` を直す | 未着手 |
 
-確認のために残してある AWS のリソース（8章の確認が終わったら消す）：IAM ロール `adk-book-agentcore-role`、S3 バケット `adk-book-agentcore-code-<アカウント番号>`。
+監視について分かったこと。
+
+- **エラー率は、自動で出るメトリクスから計算する。**（UserErrors + SystemErrors）÷ Invocations。カスタムメトリクスを自分で出す必要は無い。
+- **ツール呼び出し失敗率だけは、アプリが自分でメトリクスを出す前提。**名前空間 `Custom/Agent` の `ToolFailureRate` を監視するアラームを作るが、サンプルのエージェントはこのメトリクスを出していない（元の Google 版も同じ作り）。
+- **不正なリクエストのログは WARNING で出る。**`incident_response.py` は ERROR のログを集計するので、`test_alert.py` で起こしたエラーは集計に出てこない。
+- **遅いトレースの抽出は、結果0件でしか確認できていない。**X-Ray にトレースを記録するには、CloudWatch の Transaction Search を有効にする必要がある。
+
+確認のために作った AWS のリソース（ランタイム、IAM ロール、S3 バケット、アラーム、ダッシュボード、SNS トピック）は、すべて削除済み。
 
 ## 段階2で決めたこと
 

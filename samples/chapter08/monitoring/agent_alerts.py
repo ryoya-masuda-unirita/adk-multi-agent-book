@@ -1,122 +1,139 @@
 # samples/chapter08/monitoring/agent_alerts.py
 """エージェント層アラートの作成（8-6-5節の完全版）
 
-Python SDK（monitoring_v3.AlertPolicyServiceClient）で、カスタムメトリクスを
-閾値・持続時間付きで監視するAlertPolicyを作成する。
+Python SDK（boto3のCloudWatchクライアント）で、メトリクスを閾値・持続時間付きで
+監視するアラームを作成する。
 本文表8-12のエージェント層アラート（エラー率5%超、ツール呼び出し失敗率10%超）を
-プログラム的に登録する。gcloud CLIで同等の設定を行う場合は、同ディレクトリの
+プログラム的に登録する。AWS CLIで同等の設定を行う場合は、同ディレクトリの
 setup_alerts.sh を参照。
 
+エラー率は、AgentCore Runtimeが自動で出力するメトリクス（呼び出し回数とエラー数）から
+計算する。ツール呼び出し失敗率は、アプリケーションが出力するカスタムメトリクスを監視する。
+
 使い方:
-  export GOOGLE_CLOUD_PROJECT=your-project-id
-  export NOTIFICATION_CHANNEL_ID=12345
+  export AGENT_RUNTIME_ARN=arn:aws:bedrock-agentcore:ap-northeast-1:123456789012:runtime/my_agent-abc123
+  export NOTIFICATION_TOPIC_ARN=arn:aws:sns:ap-northeast-1:123456789012:agent-alerts
   python agent_alerts.py
 """
 import os
 import sys
 
-from google.cloud import monitoring_v3
-from google.protobuf import duration_pb2
+import boto3
+
+# AgentCore Runtimeが自動で出力するメトリクスの名前空間
+AGENTCORE_NAMESPACE = "AWS/Bedrock-AgentCore"
+# アプリケーションが出力するカスタムメトリクスの名前空間
+CUSTOM_NAMESPACE = "Custom/Agent"
 
 
-def _build_threshold_policy(
-    display_name: str,
-    condition_display_name: str,
-    metric_type: str,
-    threshold_value: float,
-    channel: str,
-    documentation: str,
-    duration_seconds: int = 300,
-) -> monitoring_v3.AlertPolicy:
-    """カスタムメトリクスの閾値超過を監視するAlertPolicyを組み立てる"""
-    condition = monitoring_v3.AlertPolicy.Condition(
-        display_name=condition_display_name,
-        condition_threshold=monitoring_v3.AlertPolicy.Condition.MetricThreshold(
-            filter=f'metric.type="{metric_type}"',
-            comparison=monitoring_v3.ComparisonType.COMPARISON_GT,
-            threshold_value=threshold_value,
-            # 持続時間: 一時的なスパイクをノイズとして除外する
-            duration=duration_pb2.Duration(seconds=duration_seconds),
-            aggregations=[
-                monitoring_v3.Aggregation(
-                    alignment_period=duration_pb2.Duration(
-                        seconds=duration_seconds
-                    ),
-                    per_series_aligner=(
-                        monitoring_v3.Aggregation.Aligner.ALIGN_MEAN
-                    ),
-                )
-            ],
-        ),
-    )
-    return monitoring_v3.AlertPolicy(
-        display_name=display_name,
-        combiner=monitoring_v3.AlertPolicy.ConditionCombinerType.OR,
-        conditions=[condition],
-        notification_channels=[channel],
-        documentation=monitoring_v3.AlertPolicy.Documentation(
-            content=documentation,
-            mime_type="text/markdown",
-        ),
-    )
+def runtime_dimensions(runtime_arn: str) -> list[dict]:
+    """ランタイムのメトリクスを特定するディメンションを組み立てる"""
+    # ランタイムIDは「ランタイム名-ランダムな文字列」の形式
+    runtime_name = runtime_arn.rsplit("/", 1)[-1].rsplit("-", 1)[0]
+    return [
+        {"Name": "Resource", "Value": runtime_arn},
+        {"Name": "Operation", "Value": "InvokeAgentRuntime"},
+        # DEFAULTは、最新バージョンを指す既定のエンドポイント
+        {"Name": "Name", "Value": f"{runtime_name}::DEFAULT"},
+    ]
+
+
+def _runtime_metric(
+    metric_id: str,
+    metric_name: str,
+    runtime_arn: str,
+    period_seconds: int,
+) -> dict:
+    """エラー率の計算に使う、ランタイムのメトリクス（合計値）の定義を組み立てる"""
+    return {
+        "Id": metric_id,
+        "MetricStat": {
+            "Metric": {
+                "Namespace": AGENTCORE_NAMESPACE,
+                "MetricName": metric_name,
+                "Dimensions": runtime_dimensions(runtime_arn),
+            },
+            "Period": period_seconds,
+            "Stat": "Sum",
+        },
+        "ReturnData": False,
+    }
 
 
 def create_agent_layer_alerts(
-    project_id: str,
-    notification_channel_id: str,
+    runtime_arn: str,
+    notification_topic_arn: str,
+    duration_seconds: int = 300,
 ) -> list[str]:
-    """エージェント層のアラートポリシーを作成し、作成したリソース名を返す"""
-    client = monitoring_v3.AlertPolicyServiceClient()
-    project_name = f"projects/{project_id}"
-    channel = (
-        f"projects/{project_id}/notificationChannels/{notification_channel_id}"
-    )
+    """エージェント層のアラームを作成し、作成したアラーム名を返す"""
+    client = boto3.client("cloudwatch")
 
-    # 表8-12のエージェント層アラートに対応する2ポリシーを定義する
-    policies = [
-        _build_threshold_policy(
-            display_name="Agent Engine - Error Rate > 5%",
-            condition_display_name="Error Rate Threshold",
-            metric_type="custom.googleapis.com/agent/error_rate",
-            threshold_value=0.05,
-            channel=channel,
-            documentation=(
+    # 表8-12のエージェント層アラートに対応する2つのアラームを定義する
+    alarms = [
+        {
+            "AlarmName": "AgentCore Runtime - Error Rate > 5%",
+            "AlarmDescription": (
                 "エージェントのエラー率が5%を超えました。ログを確認してください。"
             ),
-        ),
-        _build_threshold_policy(
-            display_name="Agent Engine - Tool Failure Rate > 10%",
-            condition_display_name="Tool Failure Rate Threshold",
-            metric_type="custom.googleapis.com/agent/tool_failure_rate",
-            threshold_value=0.10,
-            channel=channel,
-            documentation=(
+            # エラー率 =（利用者起因のエラー + システム起因のエラー）÷ 呼び出し回数
+            "Metrics": [
+                _runtime_metric(
+                    "invocations", "Invocations", runtime_arn, duration_seconds
+                ),
+                _runtime_metric(
+                    "user_errors", "UserErrors", runtime_arn, duration_seconds
+                ),
+                _runtime_metric(
+                    "system_errors", "SystemErrors", runtime_arn, duration_seconds
+                ),
+                {
+                    "Id": "error_rate",
+                    "Expression": "(user_errors + system_errors) / invocations",
+                    "Label": "Error Rate",
+                    "ReturnData": True,
+                },
+            ],
+            "Threshold": 0.05,
+        },
+        {
+            "AlarmName": "AgentCore Runtime - Tool Failure Rate > 10%",
+            "AlarmDescription": (
                 "ツール呼び出しの失敗率が10%を超えました。"
                 "外部API断を確認してください。"
             ),
-        ),
+            "Namespace": CUSTOM_NAMESPACE,
+            "MetricName": "ToolFailureRate",
+            "Statistic": "Average",
+            # 持続時間: 一時的なスパイクをノイズとして除外する
+            "Period": duration_seconds,
+            "Threshold": 0.10,
+        },
     ]
 
     created_names: list[str] = []
-    for policy in policies:
-        created = client.create_alert_policy(
-            name=project_name,
-            alert_policy=policy,
+    for alarm in alarms:
+        client.put_metric_alarm(
+            ComparisonOperator="GreaterThanThreshold",
+            EvaluationPeriods=1,
+            # 呼び出しが無い時間帯（データなし）はアラーム状態にしない
+            TreatMissingData="notBreaching",
+            AlarmActions=[notification_topic_arn],
+            **alarm,
         )
-        print(f"AlertPolicy created: {created.name}")
-        created_names.append(created.name)
+        print(f"Alarm created: {alarm['AlarmName']}")
+        created_names.append(alarm["AlarmName"])
 
     return created_names
 
 
 if __name__ == "__main__":
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    channel_id = os.environ.get("NOTIFICATION_CHANNEL_ID")
-    if not project_id or not channel_id:
+    runtime_arn = os.environ.get("AGENT_RUNTIME_ARN")
+    topic_arn = os.environ.get("NOTIFICATION_TOPIC_ARN")
+    if not runtime_arn or not topic_arn:
         print(
-            "環境変数 GOOGLE_CLOUD_PROJECT と NOTIFICATION_CHANNEL_ID を"
+            "環境変数 AGENT_RUNTIME_ARN と NOTIFICATION_TOPIC_ARN を"
             "設定してください。"
         )
         sys.exit(2)
 
-    create_agent_layer_alerts(project_id, channel_id)
+    create_agent_layer_alerts(runtime_arn, topic_arn)

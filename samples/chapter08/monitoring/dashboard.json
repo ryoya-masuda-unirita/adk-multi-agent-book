@@ -1,96 +1,58 @@
 {
-  "displayName": "Agent Operations Dashboard",
-  "gridLayout": {
-    "columns": "2",
-    "widgets": [
-      {
-        "title": "リクエスト数 (RPS)",
-        "xyChart": {
-          "dataSets": [
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "resource.type=\"aiplatform.googleapis.com/ReasoningEngine\" AND metric.type=\"aiplatform.googleapis.com/reasoning_engine/request_count\"",
-                  "aggregation": {
-                    "alignmentPeriod": "60s",
-                    "perSeriesAligner": "ALIGN_RATE"
-                  }
-                }
-              },
-              "plotType": "LINE"
-            }
-          ]
-        }
-      },
-      {
-        "title": "レイテンシ (P50 / P95 / P99)",
-        "xyChart": {
-          "dataSets": [
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "resource.type=\"aiplatform.googleapis.com/ReasoningEngine\" AND metric.type=\"aiplatform.googleapis.com/reasoning_engine/request_latencies\"",
-                  "aggregation": {
-                    "alignmentPeriod": "60s",
-                    "perSeriesAligner": "ALIGN_PERCENTILE_99"
-                  }
-                }
-              },
-              "plotType": "LINE"
-            }
-          ]
-        }
-      },
-      {
-        "title": "エラー率",
-        "xyChart": {
-          "dataSets": [
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "metric.type=\"custom.googleapis.com/agent/error_rate\"",
-                  "aggregation": {
-                    "alignmentPeriod": "60s",
-                    "perSeriesAligner": "ALIGN_MEAN"
-                  }
-                }
-              },
-              "plotType": "LINE"
-            }
-          ]
-        }
-      },
-      {
-        "title": "トークン使用量（入力 / 出力）",
-        "xyChart": {
-          "dataSets": [
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "metric.type=\"custom.googleapis.com/agent/input_tokens\"",
-                  "aggregation": {
-                    "alignmentPeriod": "300s",
-                    "perSeriesAligner": "ALIGN_SUM"
-                  }
-                }
-              },
-              "plotType": "STACKED_BAR"
-            },
-            {
-              "timeSeriesQuery": {
-                "timeSeriesFilter": {
-                  "filter": "metric.type=\"custom.googleapis.com/agent/output_tokens\"",
-                  "aggregation": {
-                    "alignmentPeriod": "300s",
-                    "perSeriesAligner": "ALIGN_SUM"
-                  }
-                }
-              },
-              "plotType": "STACKED_BAR"
-            }
-          ]
-        }
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "リクエスト数 (1分あたり)",
+        "region": "ap-northeast-1",
+        "view": "timeSeries",
+        "metrics": [
+          [{"expression": "SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"Invocations\" Operation=\"InvokeAgentRuntime\"', 'Sum', 60)", "id": "requests", "label": ""}]
+        ]
       }
-    ]
-  }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "レイテンシ (P50 / P95 / P99)",
+        "region": "ap-northeast-1",
+        "view": "timeSeries",
+        "metrics": [
+          [{"expression": "SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"Latency\" Operation=\"InvokeAgentRuntime\"', 'p50', 60)", "id": "p50", "label": "P50 "}],
+          [{"expression": "SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"Latency\" Operation=\"InvokeAgentRuntime\"', 'p95', 60)", "id": "p95", "label": "P95 "}],
+          [{"expression": "SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"Latency\" Operation=\"InvokeAgentRuntime\"', 'p99', 60)", "id": "p99", "label": "P99 "}]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 6, "width": 12, "height": 6,
+      "properties": {
+        "title": "エラー率",
+        "region": "ap-northeast-1",
+        "view": "timeSeries",
+        "metrics": [
+          [{"expression": "SUM(SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"Invocations\" Operation=\"InvokeAgentRuntime\"', 'Sum', 300))", "id": "invocations", "visible": false}],
+          [{"expression": "SUM(SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"UserErrors\" Operation=\"InvokeAgentRuntime\"', 'Sum', 300))", "id": "user_errors", "visible": false}],
+          [{"expression": "SUM(SEARCH('{AWS/Bedrock-AgentCore,Resource,Operation,Name} MetricName=\"SystemErrors\" Operation=\"InvokeAgentRuntime\"', 'Sum', 300))", "id": "system_errors", "visible": false}],
+          [{"expression": "(user_errors + system_errors) / invocations", "id": "error_rate", "label": "エラー率"}]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 6, "width": 12, "height": 6,
+      "properties": {
+        "title": "トークン使用量（入力 / 出力）",
+        "region": "ap-northeast-1",
+        "view": "timeSeries",
+        "metrics": [
+          [{"expression": "SUM(SEARCH('{AWS/Bedrock,ModelId} MetricName=\"InputTokenCount\"', 'Sum', 300))", "id": "input_tokens", "label": "入力"}],
+          [{"expression": "SUM(SEARCH('{AWS/Bedrock,ModelId} MetricName=\"OutputTokenCount\"', 'Sum', 300))", "id": "output_tokens", "label": "出力"}]
+        ]
+      }
+    }
+  ]
 }
