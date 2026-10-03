@@ -27,7 +27,7 @@ async def setup_push_notification(
             url=webhook_url,
             authentication=PushNotificationAuthenticationInfo(
                 schemes=["Bearer"],
-                credentials=webhook_secret,  # 本番は Secret Manager から取得
+                credentials=webhook_secret,  # 本番は AWS Secrets Manager から取得
             ),
         ),
     )

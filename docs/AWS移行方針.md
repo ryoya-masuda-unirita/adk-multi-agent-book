@@ -21,7 +21,8 @@
 | 1 | Secret Manager → Secrets Manager、セッション保存と Cloud SQL → RDS | 4, 6, 10 | 済み（ローカルで確認） |
 | 2 | Firestore → DynamoDB、Spanner → Aurora、BigQuery → Athena | 2, 5, 6 | 済み（DynamoDB と Aurora はローカル、Athena は本物で確認） |
 | 3 | RAG → Bedrock Knowledge Bases、Memory Bank → AgentCore Memory | 4 | コードは済み。AgentCore Memory は本物で確認済み。Knowledge Bases は本物では未確認 |
-| 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 9, 10 | 未着手 |
+| 4 | デプロイ（Cloud Run / Agent Engine → App Runner など）と監視（Cloud Logging → CloudWatch） | 8, 10 | 10章の監査ログだけ済み（本物の CloudWatch Logs で確認）。8章は未着手 |
+| 追加 | 6章の `gcloud` コマンド例 → `aws` コマンド | 6 | 済み（読み取りだけのコマンドを本物で確認） |
 
 確認の内容は次のとおり。
 
@@ -30,6 +31,21 @@
 - **段階2の Athena**：`oic` で本物の Athena に確認用のデータを置いて確認した。6章の分析エージェントは、Bedrock の Claude に質問して Athena から答えを得るところまで動いた。確認用のリソースは削除済み。
 - **段階3の AgentCore Memory**：`oic` で東京リージョンに確認用の Memory を作って確認した。4章のエージェントが、最初の会話で聞いた内容を、別の会話で思い出して答えるところまで動いた。確認用の Memory は削除済み。
 - **段階3の Knowledge Bases**：検索ツールは、AWS の応答を模した値でのテストだけ通している。本物の Knowledge Base は作れていない。作るには専用の IAM ロールが要り、その作成が Claude Code の安全チェックで止められたため。
+- **7章の起動前チェック**：`GOOGLE_API_KEY` が無いと実行を止める処理が残っていて、Bedrock では動かない状態だった。AWS の認証情報を確かめる形に直した。
+
+## 残っているもの
+
+| 対象 | 章 | 止まっている理由 |
+|---|---|---|
+| デプロイと監視の全体 | 8 | 決めることが2つある。下の「8章で決めること」を参照 |
+| Knowledge Bases の本物での確認 | 4 | IAM ロールの作成が要る |
+| Cloud DLP を使う個人情報のガードレール（`guardrails/dlp_guardrail.py`） | 5 | 最初の洗い出しで漏れていた。置き換え先の候補（Bedrock Guardrails、Amazon Comprehend）が日本語の個人情報をどこまで検出できるかが未確認 |
+| Google の ID トークンを検証する A2A サーバー（`auth/oauth2_server.py`） | 7 | 最初の洗い出しで漏れていた。置き換えるなら Amazon Cognito になるが、検証の作りが変わる |
+
+### 8章で決めること
+
+1. **Agent Engine の置き換え先。**8章は、テスト用スクリプトやアラートまで Agent Engine（エージェントの置き場所）を前提に書かれている。置き換え先は AgentCore Runtime が一番近いが、未検証。App Runner だけにまとめる手もある。
+2. **IAM ロールをどう作るか。**デプロイには、アプリ自身に持たせる権限（ロール）が要る。Claude Code の安全チェックがロールの作成を止めるため、人が作るか、その操作を許可する必要がある。
 
 ## 段階2で決めたこと
 

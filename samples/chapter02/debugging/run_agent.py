@@ -60,15 +60,13 @@ async def main():
             print(event.content.parts[0].text)
 
 
-# 本番環境では、SessionServiceをVertexAiSessionServiceに差し替える。
+# 本番環境では、SessionServiceをDatabaseSessionService（Amazon RDSなど）に差し替える。
 # エージェントのコードはそのままに、実行環境だけを切り替えられる。
 #
-# from google.adk.sessions import VertexAiSessionService
+# from google.adk.sessions import DatabaseSessionService
 #
-# session_service = VertexAiSessionService(
-#     project="my-gcp-project",
-#     location="us-central1",
-#     agent_engine_id="1234567890",
+# session_service = DatabaseSessionService(
+#     db_url="postgresql+asyncpg://user:password@your-rds-endpoint:5432/agent_db",
 # )
 #
 # runner = Runner(

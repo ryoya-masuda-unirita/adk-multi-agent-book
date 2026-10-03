@@ -10,10 +10,10 @@ SequentialAgentはTemplate Workflowとして利用できる。複雑な分岐や
 """
 
 import asyncio
-import os
 import urllib.error
 import urllib.request
 
+import boto3
 from google.adk.agents import SequentialAgent
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 from google.adk.runners import InMemoryRunner
@@ -48,11 +48,9 @@ pipeline = SequentialAgent(
 
 
 def _check_prerequisites(agent_card_urls: list[str]) -> bool:
-    """ローカル実行に必要なAPIキーとA2Aサーバー起動状態を確認する"""
-    if not os.environ.get("GOOGLE_API_KEY") and os.environ.get(
-        "GOOGLE_GENAI_USE_VERTEXAI"
-    ) != "TRUE":
-        print("GOOGLE_API_KEY または Vertex AI 設定が必要です。")
+    """ローカル実行に必要なAWSの認証情報とA2Aサーバー起動状態を確認する"""
+    if boto3.Session().get_credentials() is None:
+        print("AWSの認証情報が必要です。AWS_PROFILE などを設定してください。")
         return False
 
     ok = True

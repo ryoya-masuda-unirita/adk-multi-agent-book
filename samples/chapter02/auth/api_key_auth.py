@@ -1,7 +1,7 @@
 # api_key_auth.py
 # 2-7-2. API Key認証（完全版）
 # リクエストヘッダーにAPIキーを付与する最もシンプルな認証方式。
-# APIキーは環境変数またはSecret Managerから取得し、コードに直書きしない。
+# APIキーは環境変数またはAWS Secrets Managerから取得し、コードに直書きしない。
 
 import os
 

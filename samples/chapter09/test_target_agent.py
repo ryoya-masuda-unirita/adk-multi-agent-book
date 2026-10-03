@@ -3,7 +3,7 @@
 このファイルは 9-4 ハンズオン「設計レビュー自動化エージェント」の
 動作確認用ターゲットです。原則違反を意図的に埋め込んでいます。
 
-- APIキーの直書き（最小権限違反、Secret Manager未使用）
+- APIキーの直書き（最小権限違反、Secrets Manager未使用）
 - 過剰な責務（God Agent アンチパターン）
 - 長大なInstruction（Prompt Spaghetti アンチパターン）
 - 危険ツール（delete_records / drop_table）の付与

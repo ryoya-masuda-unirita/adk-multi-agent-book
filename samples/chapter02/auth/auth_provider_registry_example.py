@@ -22,7 +22,7 @@ class DummyApiKeyProvider(BaseAuthProvider):
         return (APIKey,)
 
     async def get_auth_credential(self, auth_config, context):
-        # 実際の実装ではSecret Manager等からAPIキーを取得して返す
+        # 実際の実装ではAWS Secrets Manager等からAPIキーを取得して返す
         return None
 
 
