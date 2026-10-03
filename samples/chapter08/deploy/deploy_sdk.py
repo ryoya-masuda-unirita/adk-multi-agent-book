@@ -1,194 +1,212 @@
 # samples/chapter08/deploy/deploy_sdk.py
-"""Python SDKを使ったAgent Engineデプロイ
+"""Python SDK（boto3）を使ったAgentCore Runtimeデプロイ
 
 CLIの代わりにPython SDKでデプロイする場合の例。
 CI/CDパイプラインに組み込む場合に有用。
 
+AgentCore Runtimeには、エージェントのコードと依存パッケージをzipにまとめて渡す。
+実行環境はLinuxのARM64のため、依存パッケージはARM64向けのものを取得する
+（取得には uv を使う）。
+
 依存:
-    google-adk[gcp,otel-gcp]==2.2.0
-    google-cloud-aiplatform[agent-engines]==1.153.1
-    opentelemetry-exporter-otlp-proto-http==1.41.1
+    boto3>=1.40.0
+    uv（コマンド）
+
+必要な環境変数:
+    AGENTCORE_ROLE_ARN : AgentCore Runtimeの実行ロールのARN
+    CODE_BUCKET        : zipを置くS3バケット名
 """
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
+import time
+from pathlib import Path
 
-# samples/chapter08 を import path に追加して support_agent をロードできるようにする
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import boto3
 
-import vertexai
-from vertexai import agent_engines
+# samples/chapter08（support_agent/ の親ディレクトリ）
+CHAPTER_DIR = Path(__file__).resolve().parent.parent
+AGENTCORE_DIR = Path(__file__).resolve().parent / "agentcore"
 
-from support_agent.agent import root_agent
-
-AGENT_ENGINE_REQUIREMENTS = [
-    "google-adk[gcp,otel-gcp]==2.2.0",
-    "google-cloud-aiplatform[agent-engines]==1.153.1",
-    "opentelemetry-exporter-otlp-proto-http==1.41.1",
-]
+PYTHON_VERSION = "3.12"
+AGENTCORE_PYTHON_RUNTIME = "PYTHON_3_12"
 
 
-def _resource_name(agent_engine: object) -> str:
-    """Agent Engineの完全リソース名をSDK世代差を吸収して取得する"""
-    api_resource = getattr(agent_engine, "api_resource", None)
-    name = getattr(api_resource, "name", None) or getattr(agent_engine, "name", None)
-    if not name:
-        raise AttributeError("Agent Engine resource name was not returned")
-    return name
+def build_package(output_dir: str) -> str:
+    """エージェントのコードと依存パッケージをzipにまとめ、zipのパスを返す
+
+    zipの中身は、main.py（エントリポイント）、support_agent/、依存パッケージ。
+    """
+    package_dir = Path(output_dir) / "package"
+
+    # 依存パッケージをLinux ARM64向けに取得する（実行するPCのOSやCPUには依存しない）
+    subprocess.run(
+        [
+            "uv", "pip", "install", "--quiet",
+            "--python-platform", "aarch64-manylinux_2_28",
+            "--python-version", PYTHON_VERSION,
+            "--only-binary=:all:",
+            "--target", str(package_dir),
+            "-r", str(AGENTCORE_DIR / "requirements.txt"),
+        ],
+        check=True,
+    )
+
+    # エージェントのコードを配置する（.envや__pycache__は含めない）
+    shutil.copy(AGENTCORE_DIR / "main.py", package_dir / "main.py")
+    shutil.copytree(
+        CHAPTER_DIR / "support_agent",
+        package_dir / "support_agent",
+        ignore=shutil.ignore_patterns(".env", "__pycache__"),
+    )
+
+    return shutil.make_archive(str(Path(output_dir) / "agent"), "zip", package_dir)
 
 
-def _resource_attr(agent_engine: object, attr: str) -> str:
-    """Agent Engineの表示属性をSDK世代差を吸収して取得する"""
-    api_resource = getattr(agent_engine, "api_resource", None)
-    value = getattr(api_resource, attr, None) or getattr(agent_engine, attr, None)
-    return str(value) if value is not None else ""
+def _upload_package(display_name: str) -> dict:
+    """zipをビルドしてS3へアップロードし、AgentCore Runtimeに渡すコード設定を返す"""
+    bucket = os.environ.get("CODE_BUCKET")
+    if not bucket:
+        raise RuntimeError("環境変数 CODE_BUCKET を設定してください。")
+
+    key = f"{display_name}/agent.zip"
+    with tempfile.TemporaryDirectory() as work_dir:
+        zip_path = build_package(work_dir)
+        boto3.client("s3").upload_file(zip_path, bucket, key)
+
+    return {
+        "codeConfiguration": {
+            "code": {"s3": {"bucket": bucket, "prefix": key}},
+            "runtime": AGENTCORE_PYTHON_RUNTIME,
+            "entryPoint": ["main.py"],
+        }
+    }
+
+
+def _wait_until_ready(client, runtime_id: str) -> None:
+    """ランタイムの作成・更新が完了するまで待つ"""
+    while True:
+        runtime = client.get_agent_runtime(agentRuntimeId=runtime_id)
+        if runtime["status"] not in ("CREATING", "UPDATING"):
+            break
+        time.sleep(5)
+    if runtime["status"] != "READY":
+        raise RuntimeError(
+            f"デプロイに失敗しました: {runtime['status']} "
+            f"{runtime.get('failureReason', '')}"
+        )
 
 
 def deploy_agent(
     display_name: str,
-    requirements: list[str] | None = None,
     env_vars: dict[str, str] | None = None,
 ) -> str:
-    """エージェントをAgent Engineにデプロイする
+    """エージェントをAgentCore Runtimeにデプロイする
 
-    プロジェクト・リージョン・ステージングバケットは環境変数から解決する。
+    実行ロールとzipの置き場所（S3バケット）は環境変数から解決する。
 
     Args:
-        display_name: デプロイ名
-        requirements: 依存パッケージ一覧（省略時は既定値を使用）
-        env_vars: Agent Runtimeへ渡す環境変数
+        display_name: デプロイ名（英字で始まる英数字とアンダースコア。ハイフンは使えない）
+        env_vars: ランタイムへ渡す環境変数
 
     Returns:
-        デプロイされたリソースの完全リソース名
+        デプロイされたランタイムのARN
     """
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
-    staging_bucket = os.environ.get("STAGING_BUCKET")
-    if not project_id or not staging_bucket:
-        raise RuntimeError(
-            "環境変数 GOOGLE_CLOUD_PROJECT と STAGING_BUCKET を設定してください。"
-        )
+    role_arn = os.environ.get("AGENTCORE_ROLE_ARN")
+    if not role_arn:
+        raise RuntimeError("環境変数 AGENTCORE_ROLE_ARN を設定してください。")
 
-    # Vertex AI SDKクライアントの初期化（本書はgoogle-cloud-aiplatform 1.153.1で検証）
-    client = vertexai.Client(project=project_id, location=location)
+    client = boto3.client("bedrock-agentcore-control")
 
-    print(f"Agent Engineにデプロイ中: {display_name}")
-    print(f"  Project: {project_id}")
-    print(f"  Region:  {location}")
+    print(f"AgentCore Runtimeにデプロイ中: {display_name}")
+    print(f"  Region:  {client.meta.region_name}")
 
-    # ADKエージェントをAdkAppでラップしてデプロイ
-    app = agent_engines.AdkApp(agent=root_agent)
-    config: dict = {
-        "display_name": display_name,
-        "requirements": requirements or AGENT_ENGINE_REQUIREMENTS,
-        "extra_packages": [],  # 追加パッケージ（.whlファイル等）
-        "env_vars": {
-            "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
-            "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
-            "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "EVENT_ONLY",
-            **(env_vars or {}),
-        },
-        "staging_bucket": staging_bucket,
-    }
+    response = client.create_agent_runtime(
+        agentRuntimeName=display_name,
+        agentRuntimeArtifact=_upload_package(display_name),
+        roleArn=role_arn,
+        networkConfiguration={"networkMode": "PUBLIC"},
+        protocolConfiguration={"serverProtocol": "HTTP"},
+        environmentVariables=env_vars or {},
+    )
+    _wait_until_ready(client, response["agentRuntimeId"])
 
-    remote_agent = client.agent_engines.create(agent=app, config=config)
-    resource_name = _resource_name(remote_agent)
-
-    print(f"\nデプロイ完了: {resource_name}")
-    return resource_name
+    runtime_arn = response["agentRuntimeArn"]
+    print(f"\nデプロイ完了: {runtime_arn}")
+    return runtime_arn
 
 
-def update_agent(
-    project_id: str,
-    location: str,
-    resource_name: str,
-    staging_bucket: str,
-    requirements: list[str] | None = None,
-) -> str:
+def update_agent(runtime_id: str) -> str:
     """デプロイ済みのエージェントを更新する
 
     Args:
-        project_id: Google CloudプロジェクトID
-        location: リージョン
-        resource_name: 更新対象の完全リソース名
-        staging_bucket: ステージング用のGCSバケット（例: "gs://my-bucket"）
-        requirements: 更新後の依存パッケージ一覧（省略時は既定値を使用）
+        runtime_id: 更新対象のランタイムID
 
     Returns:
-        更新されたリソースの完全リソース名
+        更新されたランタイムのARN
     """
-    client = vertexai.Client(project=project_id, location=location)
+    client = boto3.client("bedrock-agentcore-control")
+    current = client.get_agent_runtime(agentRuntimeId=runtime_id)
 
-    print(f"Agent Engineを更新中: {resource_name}")
+    print(f"AgentCore Runtimeを更新中: {runtime_id}")
 
-    # 最新のエージェント実装でAdkAppを再構築して既存リソースを更新する
-    app = agent_engines.AdkApp(agent=root_agent)
-    config: dict = {
-        "requirements": requirements or AGENT_ENGINE_REQUIREMENTS,
-        "staging_bucket": staging_bucket,
-    }
-
-    remote_agent = client.agent_engines.update(
-        name=resource_name,
-        agent=app,
-        config=config,
+    # 最新のエージェント実装でzipを作り直して既存のランタイムを更新する。
+    # 更新すると新しいバージョンが作られ、既定のエンドポイントが新しいバージョンを指す
+    response = client.update_agent_runtime(
+        agentRuntimeId=runtime_id,
+        agentRuntimeArtifact=_upload_package(current["agentRuntimeName"]),
+        roleArn=current["roleArn"],
+        networkConfiguration=current["networkConfiguration"],
+        protocolConfiguration=current["protocolConfiguration"],
+        environmentVariables=current.get("environmentVariables", {}),
     )
-    updated_resource_name = _resource_name(remote_agent)
+    _wait_until_ready(client, runtime_id)
 
-    print(f"\n更新完了: {updated_resource_name}")
-    return updated_resource_name
+    print(f"\n更新完了: {response['agentRuntimeArn']}")
+    return response["agentRuntimeArn"]
 
 
-def list_deployed_agents(project_id: str, location: str) -> list[dict]:
+def list_deployed_agents() -> list[dict]:
     """デプロイ済みのエージェント一覧を取得する
-
-    Args:
-        project_id: Google CloudプロジェクトID
-        location: リージョン
 
     Returns:
         デプロイ済みエージェントのリスト
     """
-    client = vertexai.Client(project=project_id, location=location)
-    engines = client.agent_engines.list()
+    client = boto3.client("bedrock-agentcore-control")
 
     results = []
-    for engine in engines:
+    for runtime in client.list_agent_runtimes()["agentRuntimes"]:
         results.append({
-            "name": _resource_attr(engine, "display_name"),
-            "resource_name": _resource_name(engine),
-            "create_time": _resource_attr(engine, "create_time"),
-            "update_time": _resource_attr(engine, "update_time"),
+            "name": runtime["agentRuntimeName"],
+            "runtime_id": runtime["agentRuntimeId"],
+            "runtime_arn": runtime["agentRuntimeArn"],
+            "version": runtime["agentRuntimeVersion"],
+            "status": runtime["status"],
+            "update_time": str(runtime["lastUpdatedAt"]),
         })
     return results
 
 
-def delete_agent(project_id: str, location: str, resource_name: str) -> None:
+def delete_agent(runtime_id: str) -> None:
     """デプロイ済みのエージェントを削除する
 
     Args:
-        project_id: Google CloudプロジェクトID
-        location: リージョン
-        resource_name: 削除対象の完全リソース名
+        runtime_id: 削除対象のランタイムID
     """
-    client = vertexai.Client(project=project_id, location=location)
-    client.agent_engines.delete(name=resource_name, force=True)
-    print(f"削除完了: {resource_name}")
+    client = boto3.client("bedrock-agentcore-control")
+    client.delete_agent_runtime(agentRuntimeId=runtime_id)
+    print(f"削除完了: {runtime_id}")
 
 
 if __name__ == "__main__":
-    # 環境変数から設定を取得
-    _project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    _location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
-
-    if not _project:
-        print("環境変数 GOOGLE_CLOUD_PROJECT を設定してください。")
-        sys.exit(1)
-
     # デプロイ済みエージェントの一覧表示
     print("=== デプロイ済みエージェント ===")
-    agents = list_deployed_agents(_project, _location)
+    agents = list_deployed_agents()
     for agent in agents:
-        print(f"  {agent['name']}: {agent['resource_name']}")
+        print(f"  {agent['name']}: {agent['runtime_arn']}")
 
     if not agents:
         print("  （なし）")
+        sys.exit(0)

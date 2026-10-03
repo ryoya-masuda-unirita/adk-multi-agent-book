@@ -1,29 +1,43 @@
 # samples/chapter08/query_with_retry.py
-"""Interactions APIのエラーハンドリング実装例（8-4-6 完全版）
+"""AgentCore Runtime呼び出しのエラーハンドリング実装例（8-4-6 完全版）
 
-レート制限（ResourceExhausted）・サービス一時停止（ServiceUnavailable）は
-指数バックオフでリトライし、不正リクエスト（InvalidArgument）・リソース不在
-（NotFound）はリトライせずに呼び出し元へ通知する。
-紙面で省略した ServiceUnavailable / NotFound のハンドリングを含む完全版。
+レート制限（ThrottlingException）・サービス一時停止（InternalServerException）は
+指数バックオフでリトライし、不正リクエスト（ValidationException など）・リソース不在
+（ResourceNotFoundException）はリトライせずに呼び出し元へ通知する。
+紙面で省略したサービス一時停止 / リソース不在のハンドリングを含む完全版。
 """
 import asyncio
+import json
 import os
 
-from google.api_core import exceptions as google_exceptions
-import vertexai
-from vertexai import agent_engines
+import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError, ParamValidationError
+
+# レート制限として扱うエラーコード
+THROTTLING_ERRORS = {"ThrottlingException", "ServiceQuotaExceededException"}
+# サービス側の一時的な障害として扱うエラーコード
+UNAVAILABLE_ERRORS = {"InternalServerException", "ServiceException"}
+# リクエストの内容が不正な場合のエラーコード（RuntimeClientErrorはエージェント側が4xxを返した場合）
+INVALID_REQUEST_ERRORS = {"ValidationException", "RuntimeClientError"}
 
 
-def get_agent_engine() -> object:
-    """環境変数で指定されたAgent Engineクライアントを取得する"""
-    project = os.environ.get("GOOGLE_CLOUD_PROJECT", "my-project")
-    location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
-    resource_name = os.environ.get(
-        "AGENT_ENGINE_RESOURCE_NAME",
-        "projects/my-project/locations/us-central1/reasoningEngines/1234567890",
+def get_agentcore_client() -> object:
+    """AgentCore Runtimeを呼び出すクライアントを取得する"""
+    # リトライはこのモジュールで制御するため、boto3の自動リトライは無効にする。
+    # エージェントの応答には時間がかかるため、読み取りのタイムアウトは長めにする
+    return boto3.client(
+        "bedrock-agentcore",
+        config=Config(read_timeout=300, retries={"max_attempts": 1}),
     )
-    vertexai.init(project=project, location=location)
-    return agent_engines.get(resource_name)
+
+
+def get_agent_runtime_arn() -> str:
+    """環境変数で指定されたランタイムのARNを取得する"""
+    return os.environ.get(
+        "AGENT_RUNTIME_ARN",
+        "arn:aws:bedrock-agentcore:ap-northeast-1:123456789012:runtime/my_agent-abc123",
+    )
 
 
 async def query_with_retry(
@@ -31,43 +45,58 @@ async def query_with_retry(
     session_id: str,
     message: str,
     max_retries: int = 3,
-    agent_engine_client: object | None = None,
+    agentcore_client: object | None = None,
 ) -> object:
-    """リトライ付きのクエリ実行（非同期ストリーミング）"""
-    agent_engine = agent_engine_client or get_agent_engine()
+    """リトライ付きのクエリ実行
+
+    session_id は33文字以上が必要（AgentCore RuntimeのruntimeSessionIdの制約）。
+    """
+    client = agentcore_client or get_agentcore_client()
+    payload = json.dumps({"message": message, "user_id": user_id}).encode()
 
     for attempt in range(max_retries):
         try:
-            final_event = None
-            async for event in agent_engine.async_stream_query(
-                user_id=user_id,
-                session_id=session_id,
-                message=message,
-            ):
-                final_event = event
-            return final_event
+            # boto3は同期APIのため、イベントループを止めないよう別スレッドで呼び出す
+            response = await asyncio.to_thread(
+                client.invoke_agent_runtime,
+                agentRuntimeArn=get_agent_runtime_arn(),
+                runtimeSessionId=session_id,
+                contentType="application/json",
+                payload=payload,
+            )
+            return json.loads(response["response"].read())
 
-        except google_exceptions.ResourceExhausted:
-            # レート制限: 指数バックオフで待機
-            wait_time = 2 ** attempt
-            print(f"レート制限。{wait_time}秒後にリトライします...")
-            await asyncio.sleep(wait_time)
-
-        except google_exceptions.ServiceUnavailable:
-            # サービス一時停止: リトライ
-            wait_time = 2 ** attempt
-            print(f"サービス一時停止。{wait_time}秒後にリトライします...")
-            await asyncio.sleep(wait_time)
-
-        except google_exceptions.InvalidArgument as e:
-            # 不正なリクエスト: リトライ不要
+        except ParamValidationError as e:
+            # 送信前の検査で不正と判定されたリクエスト（セッションIDが短いなど）: リトライ不要
             raise ValueError(f"リクエストが不正です: {e}") from e
 
-        except google_exceptions.NotFound:
-            # リソースが見つからない: セッションの再作成を試みる
-            raise ValueError(
-                f"セッション {session_id} が見つかりません。"
-                "新しいセッションを作成してください。"
-            )
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+
+            if error_code in THROTTLING_ERRORS:
+                # レート制限: 指数バックオフで待機
+                wait_time = 2 ** attempt
+                print(f"レート制限。{wait_time}秒後にリトライします...")
+                await asyncio.sleep(wait_time)
+
+            elif error_code in UNAVAILABLE_ERRORS:
+                # サービス一時停止: リトライ
+                wait_time = 2 ** attempt
+                print(f"サービス一時停止。{wait_time}秒後にリトライします...")
+                await asyncio.sleep(wait_time)
+
+            elif error_code in INVALID_REQUEST_ERRORS:
+                # 不正なリクエスト: リトライ不要
+                raise ValueError(f"リクエストが不正です: {e}") from e
+
+            elif error_code == "ResourceNotFoundException":
+                # リソースが見つからない: デプロイ先の指定を確認する
+                raise ValueError(
+                    "ランタイムが見つかりません。"
+                    "AGENT_RUNTIME_ARN の指定を確認してください。"
+                ) from e
+
+            else:
+                raise
 
     raise RuntimeError(f"{max_retries}回のリトライ後も失敗しました")
